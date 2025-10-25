@@ -18,13 +18,11 @@ class UpdateResource extends JsonResource
 //        return parent::toArray($request);
         return [
             'id'         => $this->id,
-            'uuid'       => $this->uuid,
             'first_name' => $this->first_name,
             'last_name'  => $this->last_name,
             'email'      => $this->email,
             'avatar'     => $this->avatar ? Helpers::generateTempURL($this->avatar,config('app.file_system')) : null,
             'role'       => $this->role,
-            'bio'        => $this->bio,
         ];
     }
 }

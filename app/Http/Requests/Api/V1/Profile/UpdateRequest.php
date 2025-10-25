@@ -33,7 +33,6 @@ class UpdateRequest extends FormRequest
                 Rule::unique('users')->ignore($this->user()->id),
             ],
             'avatar' => ['sometimes', 'nullable', 'file', 'max:2048', 'mimes:jpeg,jpg,png'],
-            'bio'    => ['sometimes', 'nullable', 'string'],
         ];
     }
 }

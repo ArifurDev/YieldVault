@@ -9,7 +9,6 @@ use App\Http\Controllers\API\Auth\User\AuthenticationController;
 //! Route for user
 Route::prefix('v1')->controller(AuthenticationController::class)->group(function () {
     Route::post('/sign-up', 'signup');
-    Route::post('/verify/otp', 'verifyOtp');
     Route::post('/login', 'login');
 });
 

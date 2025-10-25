@@ -45,7 +45,6 @@ class ProfileController extends Controller
             $auth->first_name = $validated['first_name'];
             $auth->last_name  = $validated['last_name'];
             $auth->email      = $validated['email'];
-            $auth->bio        = $validated['bio'];
 
             $imagePaths = $auth->avatar;
             // Update avatar if provided
