@@ -1,22 +1,17 @@
 <?php
 
-namespace App\Http\Controllers\API\Auth\User;
+namespace App\Http\Controllers\API\V1\Auth\User;
 
 use App\Enum\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
-use App\Http\Requests\Api\V1\Auth\OtpVerifyRequest;
 use App\Http\Requests\Api\V1\Auth\SignupRequest;
 use App\Http\Resources\Api\V1\Auth\UserResource;
-use App\Mail\Api\V1\SendOtpMail;
 use App\Models\User;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthenticationController extends Controller
@@ -39,7 +34,6 @@ class AuthenticationController extends Controller
             ]);
 
             $token = auth('api')->login($user);
-
             // success response
             return $this->sendResponse(new UserResource($user),'User registration successful.',200,$token);
         }catch (\Exception $exception){

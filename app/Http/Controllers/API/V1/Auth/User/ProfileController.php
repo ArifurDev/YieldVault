@@ -1,14 +1,16 @@
 <?php
 
-namespace App\Http\Controllers\API\Auth\User;
+namespace App\Http\Controllers\API\V1\Auth\User;
 
 use App\Helpers\helpers;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Profile\PasswordUpdateRequest;
 use App\Http\Requests\Api\V1\Profile\UpdateRequest;
 use App\Http\Resources\Api\V1\Profile\getResource;
 use App\Http\Resources\Api\V1\Profile\UpdateResource;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
@@ -66,7 +68,6 @@ class ProfileController extends Controller
         }
     }
 
-
     /**
      * logout
      */
@@ -79,6 +80,48 @@ class ProfileController extends Controller
             return $this->sendResponse([], 'Successfully logged out.');
         } catch (JWTException $e) {
             return $this->sendError('Failed to log out, please try again later', [], 500);
+        }
+    }
+
+    /**
+     * update notification if notification is true that user get push notification
+     */
+    public function notificationSwitch()
+    {
+        try {
+            $auth = auth()->user();
+            $auth->notification = $auth->notification ? false : true;
+            $auth->save();
+            return $this->sendResponse([], 'Notification Status update successfully.');
+        }catch (\Exception $e){
+            Log::error("Failed to update notification status: " . $e->getMessage());
+            return $this->sendError("Failed to update notification status:".$e->getMessage(),[],500);
+        }
+    }
+
+
+    /**
+     * update password
+     */
+    public function updatePassword(PasswordUpdateRequest $request)
+    {
+        $validated = $request->validated();
+
+        try {
+
+            $user = auth()->user(); // get current auth
+
+            // verify current password
+            if (! Hash::check($request->input('current_password'), $user->password)) {
+                return $this->sendError('Current password is incorrect.', [], 422);
+            }
+
+            $user->password = Hash::make($validated['current_password']);
+            $user->save();
+            return $this->sendResponse([], 'Password updated successfully.');
+        }catch (\Exception $e){
+            Log::error("Failed to update password: " . $e->getMessage());
+            return $this->sendError("Failed to update password:".$e->getMessage(),[],500);
         }
     }
 }

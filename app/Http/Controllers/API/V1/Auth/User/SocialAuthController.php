@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API\Auth\User;
+namespace App\Http\Controllers\API\V1\Auth\User;
 
 use App\Enum\Role;
 use App\Http\Controllers\Controller;
@@ -8,12 +8,9 @@ use App\Http\Requests\Api\V1\Auth\SocialAuthRequest;
 use App\Http\Resources\Api\V1\Auth\SocialAuthResource;
 use App\Models\User;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class SocialAuthController extends Controller
 {

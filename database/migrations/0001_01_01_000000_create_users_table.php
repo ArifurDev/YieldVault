@@ -25,6 +25,7 @@ return new class extends Migration
             $table->text('bio')->nullable();
             $table->string('provider')->nullable(); // e.g., 'google', 'apple'
             $table->string('provider_id')->nullable(); // Unique ID from the provider
+            $table->boolean('notification')->default(true);
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
