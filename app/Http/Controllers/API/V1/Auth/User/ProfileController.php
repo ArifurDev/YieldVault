@@ -99,7 +99,6 @@ class ProfileController extends Controller
         }
     }
 
-
     /**
      * update password
      */
@@ -112,7 +111,7 @@ class ProfileController extends Controller
             $user = auth()->user(); // get current auth
 
             // verify current password
-            if (! Hash::check($request->input('current_password'), $user->password)) {
+            if (!Hash::check($request->input('current_password'), $user->password)) {
                 return $this->sendError('Current password is incorrect.', [], 422);
             }
 
@@ -123,5 +122,13 @@ class ProfileController extends Controller
             Log::error("Failed to update password: " . $e->getMessage());
             return $this->sendError("Failed to update password:".$e->getMessage(),[],500);
         }
+    }
+
+    /**
+     * refresh token
+     */
+    public function refreshToken()
+    {
+        
     }
 }

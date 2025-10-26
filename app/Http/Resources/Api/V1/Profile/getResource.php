@@ -23,6 +23,7 @@ class getResource extends JsonResource
             'email'      => $this->email,
             'avatar'     => $this->avatar ? Helpers::generateTempURL($this->avatar,config('app.file_system')) : null,
             'role'       => $this->role,
+            'is_notify'  => $this->notification ? true : false,
         ];
     }
 }
