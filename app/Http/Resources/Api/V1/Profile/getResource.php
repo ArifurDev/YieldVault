@@ -17,13 +17,14 @@ class getResource extends JsonResource
     {
 //        return parent::toArray($request);
         return [
-            'id'         => $this->id,
-            'first_name' => $this->first_name,
-            'last_name'  => $this->last_name,
-            'email'      => $this->email,
-            'avatar'     => $this->avatar ? Helpers::generateTempURL($this->avatar,config('app.file_system')) : null,
-            'role'       => $this->role,
-            'is_notify'  => $this->notification ? true : false,
+            'id'            => $this->id,
+            'first_name'    => $this->first_name,
+            'last_name'     => $this->last_name,
+            'email'         => $this->email,
+            'avatar'        => $this->avatar ? Helpers::generateTempURL($this->avatar,config('app.file_system')) : null,
+            'role'          => $this->role,
+            'is_notify'     => $this->notification ? true : false,
+            'kyc_status'    => $this->kyc_status ?? null
         ];
     }
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\API\V1\Auth\User\AuthenticationController;
 use App\Http\Controllers\API\V1\Auth\User\ForgotPasswordController;
 use App\Http\Controllers\API\V1\Auth\User\ProfileController;
 use App\Http\Controllers\API\V1\Auth\User\SocialAuthController;
+use App\Http\Controllers\API\V1\KycController;
 use Illuminate\Support\Facades\Route;
 
 //! Route for user
@@ -37,6 +38,26 @@ Route::group(['middleware' => ['jwt.verify']], function () {
         Route::put('update-password', 'updatePassword');
     });
 
+    /**
+     * kyc -submit
+     */
+    Route::prefix('v1/auth')->controller(KycController::class)->group(function () {
+        Route::post('/kyc/submit-document', 'submitDocument');
+    });
+
+
+
+
+
+
+    // --------------------------------- manager role
+
+    /**
+     * kyc -submit
+     */
+    Route::prefix('v1')->controller(KycController::class)->group(function () {
+        Route::get('/kyc', 'index');
+    });
 
 
 });

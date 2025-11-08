@@ -16,11 +16,12 @@ class UserResource extends JsonResource
     {
 //        return parent::toArray($request);
         return [
-            'id'         => $this->id,
-            'first_name' => $this->first_name,
-            'last_name'  => $this->last_name,
-            'email'      => $this->email,
-            'role'       => $this->role,
+            'id'            => $this->id,
+            'first_name'    => $this->first_name,
+            'last_name'     => $this->last_name,
+            'email'         => $this->email,
+            'role'          => $this->role,
+            'kyc_status'    => $this->kyc_status ?? null
         ];
     }
 }
