@@ -4,9 +4,11 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Helpers\helpers;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Kyc\DocumentUpdateRequest;
 use App\Http\Requests\Api\V1\Kyc\indexRequest;
 use App\Http\Requests\Api\V1\Kyc\submissionRequest;
 use App\Http\Resources\Api\V1\Kyc\getDataResource;
+use App\Http\Resources\Api\V1\Kyc\showDataResource;
 use App\Models\KycDocument;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\DB;
@@ -114,5 +116,30 @@ class KycController extends Controller
             Log::error("Failed to submit document submitted successfully:" . $e->getMessage());
             return $this->sendError("Failed to submit document submitted successfully:" . $e->getMessage(), [], 500);
         }
+    }
+
+    /**
+     * View a single KYC document
+     */
+    public function show($documentId)
+    {
+        // get current auth
+        $user = auth()->user();
+//        if (!in_array($user->role, ['admin', 'moderator'])){
+//            return $this->sendError('You do not have permission to view this document.', [], 422);
+//        }
+        $document = KycDocument::with('user')->find($documentId);
+        if (empty($document)) {
+            return $this->sendError('Document not found.', [], 404);
+        }
+        return $this->sendResponse(new showDataResource($document),"Document retrieved successfully.");
+    }
+
+    /**
+     * update update Approve/Reject KYC
+     */
+    public function update(DocumentUpdateRequest $request, $documentId)
+    {
+
     }
 }

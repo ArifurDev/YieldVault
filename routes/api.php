@@ -46,17 +46,15 @@ Route::group(['middleware' => ['jwt.verify']], function () {
     });
 
 
-
-
-
-
     // --------------------------------- manager role
 
     /**
-     * kyc -submit
+     * kyc -feature
      */
     Route::prefix('v1')->controller(KycController::class)->group(function () {
         Route::get('/kyc', 'index');
+        Route::get('/kyc-documents/{id}', 'show');      // View a single KYC document
+        Route::put('/kyc-documents/{id}/review', 'update'); // Approve/Reject KYC
     });
 
 
