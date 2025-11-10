@@ -1,7 +1,12 @@
 <?php
 namespace App\Helpers;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Kreait\Firebase\Factory;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification as FirebaseNotification;
 
 class helpers
 {
@@ -62,6 +67,28 @@ class helpers
         }
 
         return Storage::disk($disk)->url($path);
+    }
+
+
+    //! Send firebase notification
+    public static function sendNotifyMobile($token, $data): void
+    {
+        try {
+            // Debugging autoloader
+            if (!class_exists(Factory::class)) {
+                Log::error('Class "Kreait\\Firebase\\Factory" not found. Check if the Firebase SDK is installed.');
+            }
+            $factory = (new Factory)->withServiceAccount(storage_path('app/private/google-services.json'));
+
+            $messaging    = $factory->createMessaging();
+            $notification = FirebaseNotification::create($data['title'], Str::limit($data['message'], 100));
+
+            $message = CloudMessage::withTarget('token', $token)
+                ->withNotification($notification);
+            $messaging->send($message);
+        } catch (\Exception $exception) {
+            Log::error($exception->getMessage());
+        }
     }
 
 }

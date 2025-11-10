@@ -10,6 +10,7 @@ use App\Http\Requests\Api\V1\Kyc\submissionRequest;
 use App\Http\Resources\Api\V1\Kyc\getDataResource;
 use App\Http\Resources\Api\V1\Kyc\showDataResource;
 use App\Models\KycDocument;
+use App\Notifications\UniversalNotification;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -140,6 +141,35 @@ class KycController extends Controller
      */
     public function update(DocumentUpdateRequest $request, $documentId)
     {
+        $validated = $request->validated();
+        // get current auth
+        $user = auth()->user();
+        //        if (!in_array($user->role, ['admin', 'moderator'])){
+//            return $this->sendError('You do not have permission to view this document.', [], 422);
+//        }
+        $document = KycDocument::with('user')->find($documentId);
+        if (empty($document)) {
+            return $this->sendError('Document not found.', [], 404);
+        }
+        $document->status = $validated['status'];
+        $document->rejection_reason = $validated['status'] == "rejected" ?  $validated['reason'] : null;
+        $document->save();
+        // message
+        $message = match ($validated['status']) {
+            'approved' => 'KYC document approved successfully.',
+            'rejected' => 'KYC document rejected successfully.',
+            default => 'KYC document updated successfully.',
+        };
+        // notify user
+        $document->user->notify(new UniversalNotification(
+            'KYC ' . ucfirst($validated['status']),
+            $validated['status'] === 'approved'
+                ? 'Your KYC verification has been approved successfully.'
+                : 'Your KYC has been rejected. Please review the reason and resubmit.',
+            'kyc_' . strtolower($validated['status']),
+            ['reason' => $document->rejection_reason]
+        ));
 
+        return $this->sendResponse([], $message);
     }
 }

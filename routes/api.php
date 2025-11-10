@@ -4,6 +4,7 @@ use App\Http\Controllers\API\V1\Auth\User\AuthenticationController;
 use App\Http\Controllers\API\V1\Auth\User\ForgotPasswordController;
 use App\Http\Controllers\API\V1\Auth\User\ProfileController;
 use App\Http\Controllers\API\V1\Auth\User\SocialAuthController;
+use App\Http\Controllers\API\V1\FirebaseTokenController;
 use App\Http\Controllers\API\V1\KycController;
 use Illuminate\Support\Facades\Route;
 
@@ -58,5 +59,14 @@ Route::group(['middleware' => ['jwt.verify']], function () {
     });
 
 
+
+    /**
+     * Firebase Token Module
+     */
+    Route::prefix('v1/firebase/token')->controller(FirebaseTokenController::class)->group(function () {
+        Route::post('/add', 'store');
+        Route::post('/get', 'getToken');
+        Route::post('/delete', 'deleteToken');
+    });
 });
 
