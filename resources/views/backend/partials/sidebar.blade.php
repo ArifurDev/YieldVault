@@ -159,6 +159,21 @@
             </div>
             <!--end:Menu item-->
 
+            <!--begin:Menu item-->
+            <div class="menu-item">
+                <a class="menu-link {{ request()->routeIs(['kyc.*']) ? 'active' : '' }}"
+                   href="{{ route('kyc.index') }}">
+                    <span class="menu-icon">
+                    <i class="ki-duotone ki-file-sheet fs-2">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                    </i>
+                    </span>
+                    <span class="menu-title">KYC Management</span>
+                </a>
+            </div>
+            <!--end:Menu item-->
+
 
             <!--begin:Menu item-->
             <div class="menu-item pt-5">

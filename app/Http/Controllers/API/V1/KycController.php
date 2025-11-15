@@ -142,34 +142,40 @@ class KycController extends Controller
     public function update(DocumentUpdateRequest $request, $documentId)
     {
         $validated = $request->validated();
-        // get current auth
-        $user = auth()->user();
-        //        if (!in_array($user->role, ['admin', 'moderator'])){
+
+        try {
+            // get current auth
+            $user = auth()->user();
+            //        if (!in_array($user->role, ['admin', 'moderator'])){
 //            return $this->sendError('You do not have permission to view this document.', [], 422);
 //        }
-        $document = KycDocument::with('user')->find($documentId);
-        if (empty($document)) {
-            return $this->sendError('Document not found.', [], 404);
-        }
-        $document->status = $validated['status'];
-        $document->rejection_reason = $validated['status'] == "rejected" ?  $validated['reason'] : null;
-        $document->save();
-        // message
-        $message = match ($validated['status']) {
-            'approved' => 'KYC document approved successfully.',
-            'rejected' => 'KYC document rejected successfully.',
-            default => 'KYC document updated successfully.',
-        };
-        // notify user
-        $document->user->notify(new UniversalNotification(
-            'KYC ' . ucfirst($validated['status']),
-            $validated['status'] === 'approved'
-                ? 'Your KYC verification has been approved successfully.'
-                : 'Your KYC has been rejected. Please review the reason and resubmit.',
-            'kyc_' . strtolower($validated['status']),
-            ['reason' => $document->rejection_reason]
-        ));
+            $document = KycDocument::with('user')->find($documentId);
+            if (empty($document)) {
+                return $this->sendError('Document not found.', [], 404);
+            }
+            $document->status = $validated['status'];
+            $document->rejection_reason = $validated['status'] == "rejected" ?  $validated['reason'] : null;
+            $document->save();
+            // message
+            $message = match ($validated['status']) {
+                'approved' => 'KYC document approved successfully.',
+                'rejected' => 'KYC document rejected successfully.',
+                default => 'KYC document updated successfully.',
+            };
+            // notify user
+            $document->user->notify(new UniversalNotification(
+                'KYC ' . ucfirst($validated['status']),
+                $validated['status'] === 'approved'
+                    ? 'Your KYC verification has been approved successfully.'
+                    : 'Your KYC has been rejected. Please review the reason and resubmit.',
+                'kyc_' . strtolower($validated['status']),
+                ['reason' => $document->rejection_reason]
+            ));
 
-        return $this->sendResponse([], $message);
+            return $this->sendResponse([], $message);
+        }catch (\Exception $e){
+            Log::error("Failed to update document status:" . $e->getMessage());
+            return $this->sendError("Failed to update document status:" . $e->getMessage(), [], 500);
+        }
     }
 }

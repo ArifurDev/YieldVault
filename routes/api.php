@@ -58,8 +58,6 @@ Route::group(['middleware' => ['jwt.verify']], function () {
         Route::put('/kyc-documents/{id}/review', 'update'); // Approve/Reject KYC
     });
 
-
-
     /**
      * Firebase Token Module
      */

@@ -4,6 +4,7 @@
 
 use App\Http\Controllers\Web\Backend\DashboardController;
 use App\Http\Controllers\Web\Backend\DynamicPageController;
+use App\Http\Controllers\Web\Backend\KycController;
 use App\Http\Controllers\Web\Backend\PermissionController;
 use App\Http\Controllers\Web\Backend\ProfileController;
 use App\Http\Controllers\Web\Backend\RoleController;
@@ -73,4 +74,13 @@ Route::prefix('/dynamic-pages')->controller(DynamicPageController::class)->group
     Route::get('/{id}/edit', 'edit')->name('dynamic-pages.edit');
     Route::post('/{id}','update')->name('dynamic-pages.update');
     Route::delete('/{id}','destroy')->name('dynamic-pages.delete');
+});
+
+
+//! Route for kyc
+Route::prefix('/kyc')->controller(KycController::class)->group(function () {
+    Route::get('/', 'index')->name('kyc.index');
+    Route::get('/edit/{id}', 'edit')->name('kyc.edit');
+    Route::patch('/{id}', 'update')->name('kyc.update');
+    Route::delete('/{id}', 'destroy')->name('kyc.delete');
 });

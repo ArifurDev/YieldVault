@@ -39,59 +39,105 @@
 
                 <!--begin:row-->
                 <div class="row gx-6 gx-xl-9">
+{{--                    <div class="col-lg-6 col-xxl-4">--}}
+{{--                        <!--begin::Card-->--}}
+{{--                        <div class="card h-100">--}}
+{{--                            <!--begin::Card body-->--}}
+{{--                            <div class="card-body p-9">--}}
+{{--                                <!--begin::Heading-->--}}
+{{--                                <div class="fs-2hx fw-bold">237</div>--}}
+{{--                                <div class="fs-4 fw-semibold text-gray-400 mb-7">Current Projects</div>--}}
+{{--                                <!--end::Heading-->--}}
+
+{{--                                <!--begin::Wrapper-->--}}
+{{--                                <div class="d-flex flex-wrap">--}}
+{{--                                    <!--begin::Chart-->--}}
+{{--                                    <div class="d-flex flex-center h-100px w-100px me-9 mb-5">--}}
+{{--                                        <canvas id="kt_project_list_chart" width="100" height="100"--}}
+{{--                                            style="display: block; box-sizing: border-box; height: 100px; width: 100px;"></canvas>--}}
+{{--                                    </div>--}}
+{{--                                    <!--end::Chart-->--}}
+
+{{--                                    <!--begin::Labels-->--}}
+{{--                                    <div class="d-flex flex-column justify-content-center flex-row-fluid pe-11 mb-5">--}}
+{{--                                        <!--begin::Label-->--}}
+{{--                                        <div class="d-flex fs-6 fw-semibold align-items-center mb-3">--}}
+{{--                                            <div class="bullet bg-primary me-3"></div>--}}
+{{--                                            <div class="text-gray-400">Active</div>--}}
+{{--                                            <div class="ms-auto fw-bold text-gray-700">30</div>--}}
+{{--                                        </div>--}}
+{{--                                        <!--end::Label-->--}}
+
+{{--                                        <!--begin::Label-->--}}
+{{--                                        <div class="d-flex fs-6 fw-semibold align-items-center mb-3">--}}
+{{--                                            <div class="bullet bg-success me-3"></div>--}}
+{{--                                            <div class="text-gray-400">Completed</div>--}}
+{{--                                            <div class="ms-auto fw-bold text-gray-700">45</div>--}}
+{{--                                        </div>--}}
+{{--                                        <!--end::Label-->--}}
+
+{{--                                        <!--begin::Label-->--}}
+{{--                                        <div class="d-flex fs-6 fw-semibold align-items-center">--}}
+{{--                                            <div class="bullet bg-gray-300 me-3"></div>--}}
+{{--                                            <div class="text-gray-400">Yet to start</div>--}}
+{{--                                            <div class="ms-auto fw-bold text-gray-700">25</div>--}}
+{{--                                        </div>--}}
+{{--                                        <!--end::Label-->--}}
+{{--                                    </div>--}}
+{{--                                    <!--end::Labels-->--}}
+{{--                                </div>--}}
+{{--                                <!--end::Wrapper-->--}}
+{{--                            </div>--}}
+{{--                            <!--end::Card body-->--}}
+{{--                        </div>--}}
+{{--                        <!--end::Card-->--}}
+{{--                    </div>--}}
+
                     <div class="col-lg-6 col-xxl-4">
-                        <!--begin::Card-->
                         <div class="card h-100">
-                            <!--begin::Card body-->
                             <div class="card-body p-9">
-                                <!--begin::Heading-->
-                                <div class="fs-2hx fw-bold">237</div>
-                                <div class="fs-4 fw-semibold text-gray-400 mb-7">Current Projects</div>
-                                <!--end::Heading-->
 
-                                <!--begin::Wrapper-->
+                                <!-- Total KYC -->
+                                <div class="fs-2hx fw-bold">
+                                    {{ $kycPending + $kycApproved + $kycRejected }}
+                                </div>
+                                <div class="fs-4 fw-semibold text-gray-400 mb-7">KYC Status Overview</div>
+
                                 <div class="d-flex flex-wrap">
-                                    <!--begin::Chart-->
+
+                                    <!-- Chart area -->
                                     <div class="d-flex flex-center h-100px w-100px me-9 mb-5">
-                                        <canvas id="kt_project_list_chart" width="100" height="100"
-                                            style="display: block; box-sizing: border-box; height: 100px; width: 100px;"></canvas>
+                                        <canvas id="kt_kyc_chart" width="100" height="100"></canvas>
                                     </div>
-                                    <!--end::Chart-->
 
-                                    <!--begin::Labels-->
+                                    <!-- Status Labels -->
                                     <div class="d-flex flex-column justify-content-center flex-row-fluid pe-11 mb-5">
-                                        <!--begin::Label-->
-                                        <div class="d-flex fs-6 fw-semibold align-items-center mb-3">
-                                            <div class="bullet bg-primary me-3"></div>
-                                            <div class="text-gray-400">Active</div>
-                                            <div class="ms-auto fw-bold text-gray-700">30</div>
-                                        </div>
-                                        <!--end::Label-->
 
-                                        <!--begin::Label-->
                                         <div class="d-flex fs-6 fw-semibold align-items-center mb-3">
                                             <div class="bullet bg-success me-3"></div>
-                                            <div class="text-gray-400">Completed</div>
-                                            <div class="ms-auto fw-bold text-gray-700">45</div>
+                                            <div class="text-gray-400">Approved</div>
+                                            <div class="ms-auto fw-bold text-gray-700">{{ $kycApproved }}</div>
                                         </div>
-                                        <!--end::Label-->
 
-                                        <!--begin::Label-->
-                                        <div class="d-flex fs-6 fw-semibold align-items-center">
-                                            <div class="bullet bg-gray-300 me-3"></div>
-                                            <div class="text-gray-400">Yet to start</div>
-                                            <div class="ms-auto fw-bold text-gray-700">25</div>
+                                        <div class="d-flex fs-6 fw-semibold align-items-center mb-3">
+                                            <div class="bullet bg-danger me-3"></div>
+                                            <div class="text-gray-400">Rejected</div>
+                                            <div class="ms-auto fw-bold text-gray-700">{{ $kycRejected }}</div>
                                         </div>
-                                        <!--end::Label-->
+
+                                        <div class="d-flex fs-6 fw-semibold align-items-center">
+                                            <div class="bullet bg-warning me-3"></div>
+                                            <div class="text-gray-400">Pending</div>
+                                            <div class="ms-auto fw-bold text-gray-700">{{ $kycPending }}</div>
+                                        </div>
+
                                     </div>
-                                    <!--end::Labels-->
+
                                 </div>
-                                <!--end::Wrapper-->
                             </div>
-                            <!--end::Card body-->
                         </div>
-                        <!--end::Card-->
                     </div>
+
 
                     <div class="col-lg-6 col-xxl-4">
                         <!--begin::Budget-->
