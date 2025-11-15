@@ -102,8 +102,9 @@ class KycController extends Controller
             // VALIDATION
             $validated = $request->validate([
                 'status' => 'required|in:Approved,Rejected,Pending',
-                'reason' => 'nullable|string'
+                'rejection_reason' => 'nullable|string'
             ]);
+
 
             // FETCH DOCUMENT
             $document = KycDocument::with('user')->find($documentId);
@@ -115,7 +116,7 @@ class KycController extends Controller
             // UPDATE DOCUMENT
             $document->status           = $validated['status'];
             $document->rejection_reason = $validated['status'] === 'Rejected'
-                ? $validated['reason']
+                ? $validated['rejection_reason']
                 : null;
 
             $document->save();
