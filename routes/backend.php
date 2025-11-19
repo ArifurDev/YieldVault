@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\Backend\PermissionController;
 use App\Http\Controllers\Web\Backend\ProfileController;
 use App\Http\Controllers\Web\Backend\RoleController;
 use App\Http\Controllers\Web\Backend\SettingController;
+use App\Http\Controllers\Web\Backend\TaskController;
 use App\Http\Controllers\Web\Backend\UserController;
 use App\Http\Controllers\Web\Backend\UserRoleManagementController;
 
@@ -83,4 +84,11 @@ Route::prefix('/kyc')->controller(KycController::class)->group(function () {
     Route::get('/edit/{id}', 'edit')->name('kyc.edit');
     Route::patch('/{id}', 'update')->name('kyc.update');
     Route::delete('/{id}', 'destroy')->name('kyc.delete');
+});
+
+
+//! Route for task management
+Route::prefix('/tasks')->controller(TaskController::class)->group(function () {
+    Route::get('/', 'index')->name('tasks.index');
+    Route::get('/create', 'create')->name('tasks.create');
 });
