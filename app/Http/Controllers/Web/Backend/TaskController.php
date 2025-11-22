@@ -8,6 +8,7 @@ use App\Helpers\helpers;
 use App\Http\Controllers\Controller;
 use App\Models\Task;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Yajra\DataTables\Facades\DataTables;
 
 class TaskController extends Controller
@@ -85,10 +86,73 @@ class TaskController extends Controller
      */
     public function create()
     {
-
         return view('backend.layout.task.create',[
             'taskTypes'  => Type::cases(),
             'mediaTypes' => MediaType::cases(),
         ]);
+    }
+
+    /**
+     * store data in database
+     */
+    public function store(Request $request)
+    {
+        // VALIDATION
+       $validation = $request->validate([
+            'title'        => 'required|string|max:255',
+            'type'         => 'required|in:watch_ad,upload,click,share,invite,custom',
+            'xp'           => 'required|integer|min:0',
+
+            // show duration only if type = watch_ad
+            'duration'     => 'required_if:type,watch_ad|nullable|integer|min:1',
+
+            // media logic based on media_type
+            'media_type'   => 'required|in:video,image,url,none',
+            'media'        => 'nullable|file|max:50000', // 50MB
+            'media_url'    => 'nullable|url'
+        ]);
+
+
+        /* ------------------------------- MEDIA HANDLING LOGIC-------------------------------- */
+        $mediaPath = null;
+        $mediaType = null;
+
+        switch ($request->media_type) {
+
+            case 'video':
+                if ($request->hasFile('media')) {
+                    $file = $request->file('media');
+                    $ext  = strtolower($file->getClientOriginalExtension());
+
+                    $mediaType = in_array($ext, ['jpg','jpeg','png','webp','gif']) ? 'image' : 'video';
+
+                    $mediaFile = time() . Str::random(10) . Str::uuid() . '_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
+                    $mediaPath = Helpers::uploadFile('workout',$file,$mediaFile,config('app.file_system')); // store url
+                }
+                break;
+
+            case 'image':
+                if ($request->hasFile('media')) {
+                    $file = $request->file('media');
+                    $ext  = strtolower($file->getClientOriginalExtension());
+
+                    $mediaType = in_array($ext, ['jpg','jpeg','png','webp','gif']) ? 'image' : 'video';
+
+                    $mediaFile = time() . Str::random(10) . Str::uuid() . '_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
+                    $mediaPath = Helpers::uploadFile('workout',$file,$mediaFile,config('app.file_system')); // store url
+                }
+                break;
+
+            case 'url':
+                $mediaPath = $validation['media_url'];
+                $mediaType = $validation['media_type'];
+                break;
+
+            case 'none':
+            default:
+            $mediaPath = null;
+            $mediaType = $validation['media_type'];
+                break;
+        }
     }
 }
