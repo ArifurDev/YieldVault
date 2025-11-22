@@ -92,4 +92,7 @@ Route::prefix('/tasks')->controller(TaskController::class)->group(function () {
     Route::get('/', 'index')->name('tasks.index');
     Route::get('/create', 'create')->name('tasks.create');
     Route::post('/create', 'store')->name('tasks.store');
+    Route::get('/{id}/edit', 'edit')->name('tasks.edit');
+    Route::put('/{id}', 'update')->name('tasks.update');
+    Route::delete('/{id}', 'destroy')->name('tasks.delete');
 });
