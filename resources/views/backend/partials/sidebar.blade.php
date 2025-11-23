@@ -203,11 +203,11 @@
                 <!--end:Menu link-->
 
                 <!--begin:Menu sub-->
-                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('tasks.index') ? 'show' : '' }}">
+                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('tasks.*','daily.task.*') ? 'show' : '' }}">
 
                     <!--begin:Page List-->
                     <div class="menu-item mb-1">
-                        <a class="menu-link {{ request()->routeIs('tasks.index') ? 'active' : '' }}"
+                        <a class="menu-link {{ request()->routeIs('tasks.*') ? 'active' : '' }}"
                            href="{{ route('tasks.index') }}">
                             <span class="menu-bullet">
                                 <span class="bullet bullet-dot"></span>
@@ -219,12 +219,12 @@
 
                     <!--begin:Create Page-->
                     <div class="menu-item mb-1">
-                        <a class="menu-link {{ request()->routeIs('dynamic-pages.create') ? 'active' : '' }}"
-                           href="{{ route('dynamic-pages.create') }}">
+                        <a class="menu-link {{ request()->routeIs('daily.task.*') ? 'active' : '' }}"
+                           href="{{ route('daily.task.index') }}">
                             <span class="menu-bullet">
                                 <span class="bullet bullet-dot"></span>
                             </span>
-                            <span class="menu-title">Create New Page</span>
+                            <span class="menu-title">List of Daily Task</span>
                         </a>
                     </div>
                     <!--end:Create Page-->

@@ -13,7 +13,13 @@ return new class extends Migration
     {
         Schema::create('daily_tasks', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('task_id');
+            $table->date('date')->index();
+            $table->integer('sort_order')->default(1);
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
+
+            $table->foreign('task_id')->references('id')->on('tasks')->onDelete('cascade');
         });
     }
 

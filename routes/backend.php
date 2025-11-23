@@ -1,7 +1,7 @@
 <?php
 
 
-
+use App\Http\Controllers\Web\Backend\DailyTaskController;
 use App\Http\Controllers\Web\Backend\DashboardController;
 use App\Http\Controllers\Web\Backend\DynamicPageController;
 use App\Http\Controllers\Web\Backend\KycController;
@@ -95,4 +95,12 @@ Route::prefix('/tasks')->controller(TaskController::class)->group(function () {
     Route::get('/{id}/edit', 'edit')->name('tasks.edit');
     Route::put('/{id}', 'update')->name('tasks.update');
     Route::delete('/{id}', 'destroy')->name('tasks.delete');
+});
+
+//! Route for daily task management
+Route::prefix('/daily-tasks')->controller(DailyTaskController::class)->group(function () {
+    Route::get('/', 'index')->name('daily.task.index');
+    Route::get('/daily-tasks/assign', 'assign')->name('daily.tasks.assign');
+    Route::post('/daily-tasks/assign-store', 'assignStore')->name('daily.tasks.assign.store');
+    Route::post('/daily-tasks', 'store')->name('daily.tasks.store');
 });
