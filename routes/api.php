@@ -4,6 +4,7 @@ use App\Http\Controllers\API\V1\Auth\User\AuthenticationController;
 use App\Http\Controllers\API\V1\Auth\User\ForgotPasswordController;
 use App\Http\Controllers\API\V1\Auth\User\ProfileController;
 use App\Http\Controllers\API\V1\Auth\User\SocialAuthController;
+use App\Http\Controllers\API\V1\DailyTaskController;
 use App\Http\Controllers\API\V1\FirebaseTokenController;
 use App\Http\Controllers\API\V1\KycController;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +47,14 @@ Route::group(['middleware' => ['jwt.verify']], function () {
         Route::post('/kyc/submit-document', 'submitDocument');
     });
 
+    /**
+     * Task
+     */
+    Route::prefix('v1/tasks')->controller(DailyTaskController::class)->group(function () {
+        Route::get('/today', 'todayTask');
+        Route::post('/today-completed', 'taskCompleted');
+        Route::get('/history', 'historyTask');
+    });
 
     // --------------------------------- manager role
 

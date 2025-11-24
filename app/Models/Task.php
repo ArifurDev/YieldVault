@@ -29,4 +29,9 @@ class Task extends Model
         'media_type' => MediaType::class,
         'is_active'  => 'boolean',
     ];
+
+    public function dailyTasks()
+    {
+        return $this->hasMany(DailyTask::class);
+    }
 }

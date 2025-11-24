@@ -100,7 +100,9 @@ Route::prefix('/tasks')->controller(TaskController::class)->group(function () {
 //! Route for daily task management
 Route::prefix('/daily-tasks')->controller(DailyTaskController::class)->group(function () {
     Route::get('/', 'index')->name('daily.task.index');
-    Route::get('/daily-tasks/assign', 'assign')->name('daily.tasks.assign');
-    Route::post('/daily-tasks/assign-store', 'assignStore')->name('daily.tasks.assign.store');
-    Route::post('/daily-tasks', 'store')->name('daily.tasks.store');
+    Route::get('/assign', 'assign')->name('daily.tasks.assign');
+    Route::post('/assign-store', 'assignStore')->name('daily.tasks.assign.store');
+    Route::post('/store', 'store')->name('daily.tasks.store');
+    Route::delete('/assign-remove/{id}', 'assignRemove')->name('daily.tasks.assign.remove');
+    Route::put('/assign-update/{id}', 'assignUpdate')->name('daily.tasks.assign.update');
 });

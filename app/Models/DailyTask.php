@@ -26,4 +26,11 @@ class DailyTask extends Model
     {
         return $this->belongsTo(Task::class,'task_id');
     }
+    /**
+     * Logs of this daily task
+     */
+    public function logs()
+    {
+        return $this->hasMany(DailyTaskLog::class, 'daily_task_id');
+    }
 }

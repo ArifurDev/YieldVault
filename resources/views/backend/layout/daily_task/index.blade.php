@@ -97,6 +97,108 @@
                     });
                 });
 
+
+                // remove
+                $(document).on('click', '.delete-kyc-btn', function(e) {
+                    e.preventDefault();
+                    let ID = $(this).data('id');
+
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: "This action cannot be undone!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Yes, delete it!'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            let deleteUrl = "{{ route('daily.tasks.assign.remove', ['id' => '___id___']) }}".replace('___id___', ID);
+                            $.ajax({
+                                url: deleteUrl,
+                                type: "DELETE",
+                                data: {
+                                    _token: '{{ csrf_token() }}'
+                                },
+                                success: function(response) {
+                                    Swal.fire(
+                                        'Deleted!',
+                                        response.message,
+                                        'success'
+                                    );
+                                    $('#kt_table_users').DataTable().ajax.reload();
+                                },
+                                error: function(xhr) {
+                                    Swal.fire(
+                                        'Error!',
+                                        xhr.responseJSON?.message || 'Something went wrong.',
+                                        'error'
+                                    );
+                                }
+                            });
+                        }
+                    });
+                });
+
+
+                //Convert row to editable form
+                $(document).on("click", ".edit-row", function () {
+                    let id = $(this).data("id");
+                    let row = $(this).closest("tr");
+
+                    let date = row.find("td:eq(2)").text().trim();
+                    let status = row.find("td:eq(3)").text().trim() === "Active" ? 1 : 0;
+
+                    row.find("td:eq(2)").html(`<input type="date" class="form-control edit-date" value="${date}">`);
+                    row.find("td:eq(3)").html(`
+                        <select class="form-control edit-status">
+                            <option value="1" ${status==1?'selected':''}>Active</option>
+                            <option value="0" ${status==0?'selected':''}>Inactive</option>
+                        </select>
+                    `);
+
+                                    row.find("td:eq(4)").html(`
+                        <button class="btn btn-sm btn-success save-row" data-id="${id}">Save</button>
+                        <button class="btn btn-sm btn-secondary cancel-row" data-id="${id}">Cancel</button>
+                    `);
+                });
+
+                // ========== SAVE ROW ==========
+                $(document).on("click", ".save-row", function () {
+
+                    let id = $(this).data("id");
+                    let row = $(this).closest("tr");
+
+                    let date = row.find(".edit-date").val();
+                    let status = row.find(".edit-status").val();
+                    let updateUrl = "{{ route('daily.tasks.assign.update', ['id' => '___id___']) }}".replace('___id___', id);
+                    $.ajax({
+                        url: updateUrl,
+                        type: "POST",
+                        data: {
+                            _method: "PUT",
+                            _token: "{{ csrf_token() }}",
+                            date: date,
+                            is_active: status
+                        },
+                        success: function(res){
+                            toastr.success("Task updated!");
+
+                            $("#kt_table_users").DataTable().ajax.reload(null, false);
+                        },
+                        error:function(){
+                            toastr.error("Update failed!");
+                        }
+                    });
+
+                });
+
+                // ========== CANCEL INLINE EDIT ==========
+                $(document).on("click", ".cancel-row", function () {
+                    $("#kt_table_users").DataTable().ajax.reload(null, false);
+                });
+
+
             </script>
     @endpush
 @endsection
