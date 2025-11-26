@@ -2,8 +2,10 @@
 
 namespace App\Http\Resources\Api\V1\Task;
 
+use App\Models\ReferralLink;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Str;
 
 class getTodayTaskResource extends JsonResource
 {
@@ -36,6 +38,7 @@ class getTodayTaskResource extends JsonResource
                 'duration'   => $task->duration,
                 'media_type' => $task->media_type,
                 'media_path' => $this->generateMediaUrl($task),
+                'referral_link' => $task->type->value == "invite" ? $this->generateReferralLink() : null,
             ] : null,
             'is_complete' => $userCompleted,
         ];
@@ -57,5 +60,35 @@ class getTodayTaskResource extends JsonResource
 
         return null;
     }
+
+    /**
+     * Generate or return existing valid referral link
+     */
+    private function generateReferralLink()
+    {
+        $user = auth()->user();
+
+        // Check if a non-expired link already exists
+        $existing = ReferralLink::where('user_id', $user->id)
+            ->where('expires_at', '>', now())
+            ->latest()
+            ->first();
+
+        if ($existing) {
+            return "https://wolfmarketin.softvencefsd.xyz/sing-up?ref=" . $existing->unique_token;
+        }
+
+        // Create NEW referral link (valid for 24 hours)
+        $link = ReferralLink::create([
+            'user_id'      => $user->id,
+            'ref_code'     => strtoupper(Str::random(8)),
+            'unique_token' => (string) Str::uuid(),
+            'expires_at'   => now()->addHours(24),
+        ]);
+
+        return "https://wolfmarketin.softvencefsd.xyz/sing-up?ref=" . $link->unique_token;
+    }
+
+
 
 }

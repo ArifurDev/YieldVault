@@ -106,3 +106,5 @@ Route::prefix('/daily-tasks')->controller(DailyTaskController::class)->group(fun
     Route::delete('/assign-remove/{id}', 'assignRemove')->name('daily.tasks.assign.remove');
     Route::put('/assign-update/{id}', 'assignUpdate')->name('daily.tasks.assign.update');
 });
+
+

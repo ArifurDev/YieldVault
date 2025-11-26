@@ -7,6 +7,7 @@ use App\Http\Controllers\API\V1\Auth\User\SocialAuthController;
 use App\Http\Controllers\API\V1\DailyTaskController;
 use App\Http\Controllers\API\V1\FirebaseTokenController;
 use App\Http\Controllers\API\V1\KycController;
+use App\Http\Controllers\API\V1\ReferralController;
 use Illuminate\Support\Facades\Route;
 
 //! Route for user
@@ -76,4 +77,8 @@ Route::group(['middleware' => ['jwt.verify']], function () {
         Route::post('/delete', 'deleteToken');
     });
 });
+
+//! Route for Referral link
+Route::get('/ref/{token}', [ReferralController::class, 'handle']);
+
 
