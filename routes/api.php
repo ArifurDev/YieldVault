@@ -79,6 +79,6 @@ Route::group(['middleware' => ['jwt.verify']], function () {
 });
 
 //! Route for Referral link
-Route::get('/ref/{token}', [ReferralController::class, 'handle']);
+Route::get('v1/ref/{token}', [ReferralController::class, 'handle']);
 
 

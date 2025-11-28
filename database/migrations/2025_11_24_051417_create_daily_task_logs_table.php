@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('daily_task_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('daily_task_id');
-            $table->unsignedBigInteger('task_id');
+            $table->unsignedBigInteger('daily_task_id')->nullable();
+            $table->unsignedBigInteger('task_id')->nullable();
             $table->integer('xp_rewarded')->default(0);
             $table->timestamps();
 

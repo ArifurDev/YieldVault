@@ -88,4 +88,16 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(FirebaseTokens::class);
     }
+
+
+    public function invitedUsers()
+    {
+        return $this->hasMany(User::class, 'ref_id');
+    }
+
+    public function invitedBy()
+    {
+        return $this->belongsTo(User::class, 'ref_id');
+    }
+
 }

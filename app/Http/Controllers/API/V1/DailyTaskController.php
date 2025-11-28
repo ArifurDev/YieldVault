@@ -31,7 +31,7 @@ class DailyTaskController extends Controller
                 ->get();
             return $this->sendResponse(getTodayTaskResource::collection($tasks),"List of today tasks retrieved successfully.");
         }catch (\Exception $e){
-            return $this->sendError("Failed to retived today task:".$e->getMessage(),[],500);
+            return $this->sendError("Failed to retrieved today task:".$e->getMessage(),[],500);
         }
     }
 

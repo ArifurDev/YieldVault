@@ -26,6 +26,8 @@ class SignupRequest extends FormRequest
             'last_name'  => ['required', 'string', 'max:255'],
             'email'      => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password'   => ['required', 'string', 'min:8'],
+            'ref'        => ['sometimes','nullable', 'string'],
+            'task'       => ['sometimes','nullable', 'string'],
         ];
     }
 }
