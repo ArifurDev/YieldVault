@@ -33,7 +33,9 @@ class User extends Authenticatable implements JWTSubject
         'provider',
         'provider_id',
         'notification',
-        'kyc_status'
+        'kyc_status',
+        'ref_code',
+        'ref_id'
     ];
 
     /**

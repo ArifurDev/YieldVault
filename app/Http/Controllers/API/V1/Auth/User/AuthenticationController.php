@@ -31,6 +31,7 @@ class AuthenticationController extends Controller
         $validated = $request->validated();
         DB::beginTransaction();
         try {
+            $jwt = app(DataEncryptionService::class);
 
             // store data in database
             $user = User::create([
@@ -41,14 +42,11 @@ class AuthenticationController extends Controller
                 'role'       => Role::USER->value,
             ]);
             $user->update([
-                'referral_code' => strtoupper(Str::random(8).$user->id), // Own referral code
+                'ref_code' => $jwt->encrypt(strtoupper(Str::random(8).$user->id)), // Own referral code
             ]);
-
 
             // check ref and xp add and check
             $this->checkRef($validated,$request,$user);
-
-
 
             $token = auth('api')->login($user);
             DB::commit();
@@ -60,7 +58,6 @@ class AuthenticationController extends Controller
             return $this->sendError("Failed to create account:".$exception->getMessage(),[],500);
         }
     }
-
     /**
      * signing
      */
@@ -95,7 +92,9 @@ class AuthenticationController extends Controller
             $refLink = ReferralLink::where('unique_token', $refToken)
                 ->where('expires_at', '>', now())
                 ->first();
+
             if($refLink){
+
                 if ($refLink->user_id != $user->id) {
                     // Save referred_by
                     $user->ref_id = $refLink->user_id;
@@ -116,8 +115,7 @@ class AuthenticationController extends Controller
                         ->where('date', $today)
                         ->first();
 
-                    if ($dailyTask && $dailyTask->task->type === 'invite') {
-
+                    if ($dailyTask && $dailyTask->task->type->value === 'invite') {
                         DailyTaskLog::firstOrCreate([
                             'user_id'       => $refLink->user_id,
                             'task_id'       => $dailyTask->task_id,
@@ -126,8 +124,11 @@ class AuthenticationController extends Controller
                             'xp_rewarded'   => $dailyTask->task->xp,
                         ]);
                     }
+                    return true;
                 }
+                return true;
             }
+            return true;
         }
 
         /**
@@ -141,11 +142,10 @@ class AuthenticationController extends Controller
                 return true;
             }
 
-
             $normalRewardXp = 10; // change as needed
 
             DailyTaskLog::create([
-                'user_id'       => $refLink->user_id,
+                'user_id'       => $user->id,
                 'task_id'       => null,
                 'daily_task_id' => null,
                 'xp_rewarded'   => $normalRewardXp,
