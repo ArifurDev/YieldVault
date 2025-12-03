@@ -28,6 +28,9 @@ class DataEncryptionService
 
     public function decrypt($token)
     {
+        if (!$token) {
+            return null;
+        }
         try {
             $decoded = JWT::decode($token, new Key($this->secret, $this->algo));
             return $decoded->data;

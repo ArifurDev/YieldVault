@@ -8,6 +8,7 @@ use App\Http\Controllers\API\V1\DailyTaskController;
 use App\Http\Controllers\API\V1\FirebaseTokenController;
 use App\Http\Controllers\API\V1\KycController;
 use App\Http\Controllers\API\V1\ReferralController;
+use App\Http\Controllers\API\V1\Auth\User\ReferralController as AuthUserReferralController;
 use Illuminate\Support\Facades\Route;
 
 //! Route for user
@@ -40,6 +41,14 @@ Route::group(['middleware' => ['jwt.verify']], function () {
         Route::post('/notification', 'notificationSwitch'); // notification toggle button
         Route::put('update-password', 'updatePassword');
     });
+
+    /**
+     * Auth Referral
+     */
+    Route::prefix('v1/auth/ref')->controller(AuthUserReferralController::class)->group(function () {
+        Route::get('/', 'index');
+    });
+
 
     /**
      * kyc -submit
