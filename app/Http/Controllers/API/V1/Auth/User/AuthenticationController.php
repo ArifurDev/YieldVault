@@ -29,6 +29,7 @@ class AuthenticationController extends Controller
     public function signup(SignupRequest $request)
     {
         $validated = $request->validated();
+    
         DB::beginTransaction();
         try {
             $jwt = app(DataEncryptionService::class);
