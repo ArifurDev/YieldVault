@@ -197,6 +197,4 @@ class DailyTaskController extends Controller
             return $this->sendError("Failed to retrieved daily tasks history.",[],500);
         }
     }
-
-
 }
