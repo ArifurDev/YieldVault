@@ -26,20 +26,19 @@ class ReferralController extends Controller
                 ->whereNull('daily_task_id')
                 ->get();
 
-            $firstUser = $ref->first()?->user;
-
+            $user = auth()->user();
             // if not found that time generate code
-            if (!$firstUser->ref_code)
+            if (!$user->ref_code)
             {
-                $firstUser->ref_code = $jwt->encrypt(strtoupper(Str::random(8).$firstUser->id));
-                $firstUser->save();
+                $user->ref_code = $jwt->encrypt(strtoupper(Str::random(8).$user->id));
+                $user->save();
             }
 
             $response = [
                 'invited'       => $ref->count(),
                 'earn_program'  => $ref->sum('xp_rewarded'),
-                'ref_code'      => $firstUser && $firstUser->ref_code
-                    ? $jwt->decrypt($firstUser->ref_code)
+                'ref_code'      => $user && $user->ref_code
+                    ? $jwt->decrypt($user->ref_code)
                     : null,
             ];
 
@@ -48,4 +47,5 @@ class ReferralController extends Controller
             return $this->sendError("Failed to retrieve data:".$e->getMessage(), [],500);
         }
     }
+
 }

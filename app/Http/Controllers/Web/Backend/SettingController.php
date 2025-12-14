@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web\Backend;
 
 use App\Helpers\helpers;
 use App\Http\Controllers\Controller;
+use App\Models\ReferralSetting;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -125,5 +126,35 @@ class SettingController extends Controller
         }
 
         file_put_contents($envPath, $content);
+    }
+
+    /**
+     * invite referral points & amount settings
+     */
+    public function referralIndex()
+    {
+        return view('backend.layout.Setting.referral_index',[
+            'setting' => ReferralSetting::current(),
+        ]);
+    }
+
+    public function referralStore(Request $request)
+    {
+        // Correct validation for referral settings
+        $validated = $request->validate([
+            'referral_xp'     => 'required|integer|min:0',
+            'referral_amount' => 'required|numeric|min:0',
+        ]);
+
+        // Get single row settings
+        $settings = ReferralSetting::current();
+
+        // Update settings
+        $settings->update([
+            'referral_xp'      => $validated['referral_xp'],
+            'referral_amount'  => $validated['referral_amount'],
+        ]);
+
+        return redirect()->back()->with('success', 'Referral settings updated successfully.');
     }
 }

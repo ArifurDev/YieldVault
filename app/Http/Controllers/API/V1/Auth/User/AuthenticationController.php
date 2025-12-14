@@ -10,6 +10,7 @@ use App\Http\Resources\Api\V1\Auth\UserResource;
 use App\Models\DailyTask;
 use App\Models\DailyTaskLog;
 use App\Models\ReferralLink;
+use App\Models\ReferralSetting;
 use App\Models\User;
 use App\Services\DataEncryptionService;
 use App\Traits\ApiResponse;
@@ -29,7 +30,7 @@ class AuthenticationController extends Controller
     public function signup(SignupRequest $request)
     {
         $validated = $request->validated();
-    
+
         DB::beginTransaction();
         try {
             $jwt = app(DataEncryptionService::class);
@@ -142,6 +143,7 @@ class AuthenticationController extends Controller
             if(!$user){
                 return true;
             }
+            $settings = ReferralSetting::current();
 
             $normalRewardXp = 10; // change as needed
 
@@ -149,7 +151,7 @@ class AuthenticationController extends Controller
                 'user_id'       => $user->id,
                 'task_id'       => null,
                 'daily_task_id' => null,
-                'xp_rewarded'   => $normalRewardXp,
+                'xp_rewarded'   => $settings ? $settings->referral_xp : $normalRewardXp,
             ]);
 
             return true;

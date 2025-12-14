@@ -22,13 +22,13 @@ class DailyTaskController extends Controller
         try {
             // get current data
             $today = now()->format('Y-m-d');
-
             $tasks = DailyTask::with(['task', 'logs' => function($q) {
                     $q->where('user_id', auth()->id());
                 }])
                 ->where('date', $today)
                 ->where('is_active', 1)
                 ->get();
+
             return $this->sendResponse(getTodayTaskResource::collection($tasks),"List of today tasks retrieved successfully.");
         }catch (\Exception $e){
             return $this->sendError("Failed to retrieved today task:".$e->getMessage(),[],500);

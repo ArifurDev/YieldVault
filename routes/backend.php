@@ -31,6 +31,10 @@ Route::controller(SettingController::class)->group(function () {
     //! smtp setting
     Route::get('/smtp-setting', 'smtpIndex')->name('smtp.index');
     Route::post('/smtp-setting', 'smtpStore')->name('smtp.store');
+
+   //! Route for invite referral points & amount settings
+    Route::get('/settings/referral', 'referralIndex')->name('settings.referral.index');
+    Route::post('/settings/referral', 'referralStore')->name('settings.referral.store');
 });
 
 

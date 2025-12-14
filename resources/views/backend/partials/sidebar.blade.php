@@ -246,7 +246,7 @@
 
             <!--begin:setting item-->
             <div data-kt-menu-trigger="click"
-                class="menu-item menu-accordion {{ request()->routeIs('profile.*', 'setting.*', 'smtp.*') ? 'show' : '' }}">
+                class="menu-item menu-accordion {{ request()->routeIs('profile.*', 'setting.*', 'smtp.*','settings.referral.*') ? 'show' : '' }}">
                 <!--begin:Menu link-->
                 <span class="menu-link ">
                     <span class="menu-icon">
@@ -288,6 +288,17 @@
                         </a>
                     </div>
                     <!--end:Menu item-->
+
+                    <!--begin:Menu item-->
+                    <div class="menu-item">
+                        <a class="menu-link {{ request()->routeIs('settings.referral.*') ? 'active menu-active-bg' : '' }}"
+                           href="{{ route('settings.referral.index') }}">
+                            <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                            <span class="menu-title">Referral Setting</span>
+                        </a>
+                    </div>
+                    <!--end:Menu item-->
+
                 </div>
                 <!--end:Menu sub-->
             </div>
