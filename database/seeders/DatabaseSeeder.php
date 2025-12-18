@@ -28,5 +28,7 @@ class DatabaseSeeder extends Seeder
 
         // level seeder
         $this->call([LevelSeeder::class]);
+        // package seeder
+        $this->call([PackageSeeder::class]);
     }
 }

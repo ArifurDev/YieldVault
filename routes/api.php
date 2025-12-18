@@ -8,6 +8,7 @@ use App\Http\Controllers\API\V1\DailyTaskController;
 use App\Http\Controllers\API\V1\FirebaseTokenController;
 use App\Http\Controllers\API\V1\KycController;
 use App\Http\Controllers\API\V1\LevelController;
+use App\Http\Controllers\API\V1\PackageController;
 use App\Http\Controllers\API\V1\ReferralController;
 use App\Http\Controllers\API\V1\Auth\User\ReferralController as AuthUserReferralController;
 use Illuminate\Support\Facades\Route;
@@ -72,6 +73,13 @@ Route::group(['middleware' => ['jwt.verify']], function () {
      */
     Route::prefix('v1/levels')->controller(LevelController::class)->group(function () {
         Route::get('/', 'getLevels');
+    });
+
+    /**
+     * packages management
+     */
+    Route::prefix('v1/packages')->controller(PackageController::class)->group(function () {
+        Route::get('/', 'getPackages');
     });
 
     // --------------------------------- manager role

@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('name');                // Gold 30 Days
             $table->decimal('price', 8, 2);
             $table->integer('duration_days');
-            $table->decimal('daily_roi', 5, 2);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
