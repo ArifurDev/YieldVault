@@ -25,5 +25,8 @@ class DatabaseSeeder extends Seeder
 
         $admin = User::where('role', 'admin')->first();
         $admin->givePermissionTo(Permission::all());
+
+        // level seeder
+        $this->call([LevelSeeder::class]);
     }
 }

@@ -5,6 +5,7 @@ use App\Http\Controllers\Web\Backend\DailyTaskController;
 use App\Http\Controllers\Web\Backend\DashboardController;
 use App\Http\Controllers\Web\Backend\DynamicPageController;
 use App\Http\Controllers\Web\Backend\KycController;
+use App\Http\Controllers\Web\Backend\LevelController;
 use App\Http\Controllers\Web\Backend\PermissionController;
 use App\Http\Controllers\Web\Backend\ProfileController;
 use App\Http\Controllers\Web\Backend\RoleController;
@@ -111,4 +112,11 @@ Route::prefix('/daily-tasks')->controller(DailyTaskController::class)->group(fun
     Route::put('/assign-update/{id}', 'assignUpdate')->name('daily.tasks.assign.update');
 });
 
+
+//! Route for Levels
+Route::prefix('/levels')->controller(LevelController::class)->group(function () {
+    Route::get('/', 'index')->name('level.index');
+    Route::get('/edit/{id}', 'edit')->name('level.edit');
+    Route::put('/update/{id}', 'update')->name('level.update');
+});
 

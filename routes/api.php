@@ -7,6 +7,7 @@ use App\Http\Controllers\API\V1\Auth\User\SocialAuthController;
 use App\Http\Controllers\API\V1\DailyTaskController;
 use App\Http\Controllers\API\V1\FirebaseTokenController;
 use App\Http\Controllers\API\V1\KycController;
+use App\Http\Controllers\API\V1\LevelController;
 use App\Http\Controllers\API\V1\ReferralController;
 use App\Http\Controllers\API\V1\Auth\User\ReferralController as AuthUserReferralController;
 use Illuminate\Support\Facades\Route;
@@ -64,6 +65,13 @@ Route::group(['middleware' => ['jwt.verify']], function () {
         Route::get('/today', 'todayTask');
         Route::post('/today-completed', 'taskCompleted');
         Route::get('/history', 'historyTask');
+    });
+
+    /**
+     * level management
+     */
+    Route::prefix('v1/levels')->controller(LevelController::class)->group(function () {
+        Route::get('/', 'getLevels');
     });
 
     // --------------------------------- manager role
