@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\Package\getPackageResource;
 use App\Models\Package;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -23,5 +24,6 @@ class PackageController extends Controller
             ->with('level')
             ->get();
 
+        return $this->sendResponse(getPackageResource::collection($packages), 'Packages retrieved successfully.');
     }
 }

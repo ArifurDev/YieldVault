@@ -17,6 +17,10 @@ return new class extends Migration
             $table->unsignedBigInteger('daily_task_id')->nullable();
             $table->unsignedBigInteger('task_id')->nullable();
             $table->integer('xp_rewarded')->default(0);
+            // For streak date tracking
+            $table->date('completed_date')->nullable()->index();
+            // Streak snapshot (1,2,3,4,5)
+            $table->string('streak')->nullable();
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

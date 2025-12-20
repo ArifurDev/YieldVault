@@ -11,6 +11,8 @@ class DailyTaskLog extends Model
         'daily_task_id',
         'task_id',
         'xp_rewarded',
+        'completed_date',
+        'streak',
     ];
 
     protected $casts = [
@@ -18,6 +20,9 @@ class DailyTaskLog extends Model
         'daily_task_id' => 'integer',
         'task_id'       => 'integer',
         'xp_rewarded'   => 'integer',
+
+        'completed_date'=> 'date:Y-m-d',
+        'streak'        => 'string',
     ];
 
     /**

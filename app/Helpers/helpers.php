@@ -1,6 +1,7 @@
 <?php
 namespace App\Helpers;
 
+use App\Models\DailyTaskLog;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -90,5 +91,32 @@ class helpers
             Log::error($exception->getMessage());
         }
     }
+
+
+    /**
+     * Streak calculate helper (reuse history logic)
+     */
+    public static function calculateStreak(int $userId): int
+    {
+        $completedDays = DailyTaskLog::with('dailyTask')
+            ->where('user_id', $userId)
+            ->get()
+            ->filter(fn($log) => $log->dailyTask && $log->dailyTask->date)
+            ->map(fn($log) => $log->dailyTask->date->format('Y-m-d'))
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $streak = 0;
+        $current = now()->format('Y-m-d');
+
+        while (in_array($current, $completedDays)) {
+            $streak++;
+            $current = now()->subDays($streak)->format('Y-m-d');
+        }
+
+        return $streak;
+    }
+
 
 }

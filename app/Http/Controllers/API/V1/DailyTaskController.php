@@ -96,13 +96,24 @@ class DailyTaskController extends Controller
                 ->where('user_id', $userId)
                 ->get();
 
+            /**
+             * remove broken logs (dailyTask or date missing)
+             */
+            $logs = $logs->filter(function ($log) {
+                return $log->dailyTask && $log->dailyTask->date;
+            });
+
             // XP user earned
             $completed_xp = $logs->sum('xp_rewarded');
 
-            // Streak Calculation
-            $completedDays = $logs->pluck('dailyTask.date')
+            /*
+             * STREAK CALCULATION
+             */
+            $completedDays = $logs
+                ->map(fn($log) => $log->dailyTask->date?->format('Y-m-d'))
+                ->filter()
                 ->unique()
-                ->map(fn($d) => $d->format('Y-m-d'))
+                ->values()
                 ->toArray();
 
             $streak = 0;
@@ -113,11 +124,9 @@ class DailyTaskController extends Controller
                 $current = now()->subDays($streak)->format('Y-m-d');
             }
 
-            // LIMIT HISTORY TO TODAY + LAST 6 DAYS ONLY
-            $startDate = now()->subDays(6)->format('Y-m-d');
-            $endDate   = now()->format('Y-m-d');
-
-            // Build date list (latest first)
+            /**
+             * DATE RANGE (TODAY + LAST 6 DAYS)
+             */
             $dateRange = [];
             for ($i = 0; $i < 7; $i++) {
                 $dateRange[] = now()->subDays($i)->format('Y-m-d');
@@ -126,15 +135,15 @@ class DailyTaskController extends Controller
             // History bucket
             $history = [];
 
-            // Completed tasks ONLY for last 7 days
-            $filteredLogs = $logs->filter(function ($log) use ($startDate, $endDate) {
-                $d = $log->dailyTask->date->format('Y-m-d');
-                return $d >= $startDate && $d <= $endDate;
-            });
+            /**
+             * COMPLETED TASKS
+             */
+            foreach ($logs as $log) {
+                $date = $log->dailyTask->date?->format('Y-m-d');
+                if (!$date || !in_array($date, $dateRange)) {
+                    continue;
+                }
 
-            // Completed tasks
-            foreach ($filteredLogs as $log) {
-                $date = $log->dailyTask->date->format('Y-m-d');
                 $task = $log->task;
 
                 $history[$date][] = [
@@ -146,25 +155,29 @@ class DailyTaskController extends Controller
                 ];
             }
 
-            // Pending tasks for each date
+            /**
+             * PENDING TASKS
+             */
             foreach ($dateRange as $date) {
 
-                // Fetch daily tasks for the date
                 $dailyTasks = DailyTask::with('task')
                     ->where('date', $date)
                     ->get();
 
-                if ($dailyTasks->isEmpty()) continue;
+                if ($dailyTasks->isEmpty()) {
+                    continue;
+                }
 
                 foreach ($dailyTasks as $dt) {
+                    if (!$dt->task) continue;
+
                     $task = $dt->task;
 
-                    // Completed already?
-                    $completed = isset($history[$date])
+                    $alreadyCompleted = isset($history[$date])
                         ? collect($history[$date])->where('task_id', $task->id)->count()
                         : 0;
 
-                    if ($completed === 0) {
+                    if ($alreadyCompleted === 0) {
                         $history[$date][] = [
                             'task_id'    => $task->id,
                             'task_title' => $task->title,
@@ -176,14 +189,15 @@ class DailyTaskController extends Controller
                 }
             }
 
-            // Sort by latest first
+            // Sort latest date first
             krsort($history);
 
-            // TOTAL XP OF ALL TASKS (all time)
+            /**
+             * TOTAL XP (ALL TASKS)
+             */
             $total_xp = DailyTask::join('tasks', 'daily_tasks.task_id', '=', 'tasks.id')
                 ->sum('tasks.xp');
 
-            // FINAL RESPONSE
             $response = (object) [
                 'total_xp'     => (int) $total_xp,
                 'completed_xp' => (int) $completed_xp,
@@ -192,9 +206,12 @@ class DailyTaskController extends Controller
             ];
 
             return $this->sendResponse($response, "Tasks history retrieved successfully.");
-        }catch (\Exception $e){
-            Log::error("Failed to retrieved daily tasks history:".$e->getMessage(),[]);
-            return $this->sendError("Failed to retrieved daily tasks history.",[],500);
+
+        } catch (\Exception $e) {
+            Log::error("Failed to retrieve daily tasks history: " . $e->getMessage());
+            return $this->sendError("Failed to retrieve daily tasks history.", [], 500);
         }
     }
+
+
 }

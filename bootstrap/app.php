@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\Api\V1\HandleDailyStreak;
 use App\Http\Middleware\JWTMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
         'admin' => AdminMiddleware::class,
         'jwt.verify'       => JWTMiddleware::class,
+        'daily.streak' => HandleDailyStreak::class,
     ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -31,7 +31,7 @@ Route::prefix('v1/password')->controller(ForgotPasswordController::class)->group
 Route::post('v1/social-login', [SocialAuthController::class, 'SocialLogin']);
 
 
-Route::group(['middleware' => ['jwt.verify']], function () {
+Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
     /**
      * Profile
      */
