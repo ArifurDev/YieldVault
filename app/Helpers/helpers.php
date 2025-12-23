@@ -119,4 +119,14 @@ class helpers
     }
 
 
+    /**
+     * Generate frontend URL.
+     */
+    public static function getFrontendUrl(): string
+    {
+        return rtrim(config('app.frontend_url'), '/');
+    }
+
+
+
 }

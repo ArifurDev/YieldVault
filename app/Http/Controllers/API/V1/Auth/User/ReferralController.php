@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1\Auth\User;
 
+use App\Helpers\helpers;
 use App\Http\Controllers\Controller;
 use App\Models\DailyTask;
 use App\Models\DailyTaskLog;
@@ -39,6 +40,11 @@ class ReferralController extends Controller
                 'earn_program'  => $ref->sum('xp_rewarded'),
                 'ref_code'      => $user && $user->ref_code
                     ? $jwt->decrypt($user->ref_code)
+                    : null,
+                'ref_url'       => $user && $user->ref_code
+                    ? helpers::getFrontendUrl()
+                       . '/user-auth/user-signup'
+                       . '?ref=' . $jwt->decrypt($user->ref_code)
                     : null,
             ];
 

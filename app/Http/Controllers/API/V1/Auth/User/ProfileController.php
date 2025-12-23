@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\V1\Auth\User;
 
 use App\Helpers\helpers;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Profile\NotificationSwitchRequest;
 use App\Http\Requests\Api\V1\Profile\PasswordUpdateRequest;
 use App\Http\Requests\Api\V1\Profile\UpdateRequest;
 use App\Http\Resources\Api\V1\Profile\getResource;
@@ -86,13 +87,18 @@ class ProfileController extends Controller
     /**
      * update notification if notification is true that user get push notification
      */
-    public function notificationSwitch()
+    public function notificationSwitch(NotificationSwitchRequest $request)
     {
+        $validated = $request->validated();
         try {
-            $auth = auth()->user();
-            $auth->notification = $auth->notification ? false : true;
-            $auth->save();
-            return $this->sendResponse([], 'Notification Status update successfully.');
+            $user = auth()->user();
+
+            $user->is_notify = $validated['is_notify'];
+            $user->save();
+
+            return $this->sendResponse([
+                'is_notify' => $user->is_notify
+            ], 'Notification status updated successfully.');
         }catch (\Exception $e){
             Log::error("Failed to update notification status: " . $e->getMessage());
             return $this->sendError("Failed to update notification status:".$e->getMessage(),[],500);

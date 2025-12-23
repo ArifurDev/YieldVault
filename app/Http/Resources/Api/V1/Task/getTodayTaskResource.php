@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Task;
 
+use App\Helpers\helpers;
 use App\Models\ReferralLink;
 use App\Services\DataEncryptionService;
 use Illuminate\Http\Request;
@@ -20,7 +21,6 @@ class getTodayTaskResource extends JsonResource
     {
 //        return parent::toArray($request);
         $task = $this->task;
-
 
         // check if user completed today's task
         $userCompleted = $this->logs
@@ -81,9 +81,10 @@ class getTodayTaskResource extends JsonResource
 
         // IF EXISTS → use existing
         if ($existing) {
-            return config('app.frontend_url') .
-                "?ref=" . $existing->unique_token .
-                "&task=" . $taskEnc;
+            return helpers::getFrontendUrl()
+                . '/user-auth/user-signup'
+                . '?ref=' . $existing->unique_token
+                . '&task=' . $taskEnc;
         }
 
         // ELSE create new
@@ -94,9 +95,10 @@ class getTodayTaskResource extends JsonResource
             'expires_at'   => now()->addHours(24),
         ]);
 
-        return config('app.frontend_url') .
-            "?ref=" . $link->unique_token .
-            "&task=" . $taskEnc;
+             return helpers::getFrontendUrl()
+                . '/user-auth/user-signup'
+                . '?ref=' . $link->unique_token
+                . '&task=' . $taskEnc;
     }
 
 

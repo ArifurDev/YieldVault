@@ -150,6 +150,7 @@
                                 <option selected>Select Role </option>
                                 <option value="{{ \App\Enum\Role::USER->value }}">{{ \App\Enum\Role::USER->name }}</option>
                                 <option value="{{ \App\Enum\Role::MODERATOR->value }}">{{ \App\Enum\Role::MODERATOR->name }}</option>
+                                <option value="{{ \App\Enum\Role::MANAGER->value }}">{{ \App\Enum\Role::MANAGER->name }}</option>
                             </select>
                         </div>
                         <!--end::Input group-->
@@ -276,6 +277,8 @@
                                 <option value="">Select Role</option>
                                 <option value="{{ \App\Enum\Role::USER->value }}">{{ \App\Enum\Role::USER->name }}</option>
                                 <option value="{{ \App\Enum\Role::MODERATOR->value }}">{{ \App\Enum\Role::MODERATOR->name }}</option>
+                                <option value="{{ \App\Enum\Role::MANAGER->value }}">{{ \App\Enum\Role::MANAGER->name }}</option>
+
                             </select>
                         </div>
                         <!-- Password -->

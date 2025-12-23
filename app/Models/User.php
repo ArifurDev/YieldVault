@@ -32,7 +32,7 @@ class User extends Authenticatable implements JWTSubject
         'bio',
         'provider',
         'provider_id',
-        'notification',
+        'is_notify',
         'kyc_status',
         'ref_code',
         'ref_id'
@@ -58,6 +58,7 @@ class User extends Authenticatable implements JWTSubject
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_notify' => 'boolean',
             'role' => Role::class,
         ];
     }

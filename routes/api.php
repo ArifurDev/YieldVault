@@ -40,7 +40,7 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
         Route::put('/profile', 'update');
         Route::post('/logout', 'logout');
 
-        Route::post('/notification', 'notificationSwitch'); // notification toggle button
+        Route::put('/notification', 'notificationSwitch'); // notification toggle button
         Route::put('update-password', 'updatePassword');
     });
 
