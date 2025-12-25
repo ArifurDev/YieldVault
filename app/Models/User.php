@@ -86,7 +86,8 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
-    // Relationship: User has many FirebaseTokens
+
+    /* ========================= Relationships ========================= */
     public function firebaseTokens()
     {
         return $this->hasMany(FirebaseTokens::class);
@@ -101,6 +102,31 @@ class User extends Authenticatable implements JWTSubject
     public function invitedBy()
     {
         return $this->belongsTo(User::class, 'ref_id');
+    }
+
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    public function sentTransactions()
+    {
+        return $this->hasMany(WalletTransaction::class, 'from_user_id');
+    }
+
+    public function receivedTransactions()
+    {
+        return $this->hasMany(WalletTransaction::class, 'to_user_id');
+    }
+
+    public function depositRequests()
+    {
+        return $this->hasMany(DepositRequest::class);
+    }
+
+    public function withdrawRequests()
+    {
+        return $this->hasMany(WithdrawRequest::class);
     }
 
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\Api\V1\HandleDailyStreak;
+use App\Http\Middleware\Api\V1\IsManagerMiddleware;
 use App\Http\Middleware\JWTMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -23,10 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-        'admin' => AdminMiddleware::class,
-        'jwt.verify'       => JWTMiddleware::class,
+        'admin'        => AdminMiddleware::class,
+        'jwt.verify'   => JWTMiddleware::class,
         'daily.streak' => HandleDailyStreak::class,
-    ]);
+        'is_manager'   => IsManagerMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (NotFoundHttpException $e, $request) {

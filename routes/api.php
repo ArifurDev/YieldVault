@@ -91,7 +91,7 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
         Route::get('/kyc', 'index');
         Route::get('/kyc-documents/{id}', 'show');      // View a single KYC document
         Route::put('/kyc-documents/{id}/review', 'update'); // Approve/Reject KYC
-    });
+    })->middleware(['is_manager']);
 
     /**
      * Firebase Token Module
