@@ -13,6 +13,7 @@ use App\Http\Controllers\Web\Backend\SettingController;
 use App\Http\Controllers\Web\Backend\TaskController;
 use App\Http\Controllers\Web\Backend\UserController;
 use App\Http\Controllers\Web\Backend\UserRoleManagementController;
+use App\Http\Controllers\Web\Backend\WalletController;
 
 //! dashboard
 Route::get('/dashboard',[DashboardController::class,'index'])->name('dashboard');
@@ -120,3 +121,10 @@ Route::prefix('/levels')->controller(LevelController::class)->group(function () 
     Route::put('/update/{id}', 'update')->name('level.update');
 });
 
+
+//! Route for Wallet Management
+Route::prefix('/wallets')->controller(WalletController::class)->group(function () {
+    Route::get('/', 'index')->name('wallet.index');
+    Route::get('/show/{id}', 'show')->name('wallet.show');
+    Route::put('/update/{id}', 'update')->name('wallet.update');
+});

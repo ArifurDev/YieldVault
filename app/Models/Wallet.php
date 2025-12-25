@@ -16,7 +16,7 @@ class Wallet extends Model
         'balance' => 'decimal:2',
     ];
 
-    /* ========================= Relationships ========================= */
+    /* =========================  Relationships  ========================= */
 
     public function user()
     {

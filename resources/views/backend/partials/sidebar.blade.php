@@ -289,6 +289,66 @@
             <!--end:Menu item-->
 
 
+            <!--begin:Menu item-->
+            <div class="menu-item pt-5">
+                <div class="menu-content">
+                    <span class="fw-bold text-muted text-uppercase fs-7">Wallet Management</span>
+                </div>
+            </div><!--end:Menu item-->
+
+            <!--begin:Menu item-->
+            <div data-kt-menu-trigger="click"
+                 class="menu-item menu-accordion {{ request()->routeIs('dynamic-pages.*') ? 'show' : '' }}">
+
+                <!--begin:Menu link-->
+                <span class="menu-link">
+                    <span class="menu-icon">
+                        <i class="ki-duotone ki-element-plus fs-2">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                             <span class="path3"></span>
+                             <span class="path4"></span>
+                             <span class="path5"></span>
+                        </i>
+                    </span>
+                    <span class="menu-title">Wallet Management</span>
+                    <span class="menu-arrow"></span>
+                </span>
+                <!--end:Menu link-->
+
+                <!--begin:Menu sub-->
+                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('wallet.*','daily.task.*') ? 'show' : '' }}">
+
+                    <!--begin:Page List-->
+                    <div class="menu-item mb-1">
+                        <a class="menu-link {{ request()->routeIs('wallet.*') ? 'active' : '' }}"
+                           href="{{ route('wallet.index') }}">
+                            <span class="menu-bullet">
+                                <span class="bullet bullet-dot"></span>
+                            </span>
+                            <span class="menu-title">List of Wallet</span>
+                        </a>
+                    </div>
+                    <!--end:Page List-->
+
+                    <!--begin:Create Page-->
+                    <div class="menu-item mb-1">
+                        <a class="menu-link {{ request()->routeIs('daily.task.*') ? 'active' : '' }}"
+                           href="{{ route('daily.task.index') }}">
+                            <span class="menu-bullet">
+                                <span class="bullet bullet-dot"></span>
+                            </span>
+                            <span class="menu-title">List of Daily Task</span>
+                        </a>
+                    </div>
+                    <!--end:Create Page-->
+
+                </div>
+                <!--end:Menu sub-->
+            </div>
+            <!--end:Menu item-->
+
+
 
             <!--begin:Menu item-->
             <div class="menu-item pt-5">
