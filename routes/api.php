@@ -11,6 +11,7 @@ use App\Http\Controllers\API\V1\LevelController;
 use App\Http\Controllers\API\V1\PackageController;
 use App\Http\Controllers\API\V1\ReferralController;
 use App\Http\Controllers\API\V1\Auth\User\ReferralController as AuthUserReferralController;
+use App\Http\Controllers\API\V1\WalletController;
 use Illuminate\Support\Facades\Route;
 
 //! Route for user
@@ -81,6 +82,14 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
     Route::prefix('v1/packages')->controller(PackageController::class)->group(function () {
         Route::get('/', 'getPackages');
     });
+
+    /**
+     * wallet management
+     */
+    Route::prefix('v1/wallet')->controller(WalletController::class)->group(function () {
+        Route::get('/', 'getWallet');
+    });
+
 
     // --------------------------------- manager role
 
