@@ -146,14 +146,34 @@
                         <!--begin::Input group-->
                         <div class="mb-10">
                             <label for="exampleFormControlInput1" class="required form-label">Role</label>
-                            <select class="form-select form-select-solid" aria-label="Select example" name="role">
+                            <select class="form-select form-select-solid" aria-label="Select example" name="role" id="role_select">
                                 <option selected>Select Role </option>
                                 <option value="{{ \App\Enum\Role::USER->value }}">{{ \App\Enum\Role::USER->name }}</option>
                                 <option value="{{ \App\Enum\Role::MODERATOR->value }}">{{ \App\Enum\Role::MODERATOR->name }}</option>
                                 <option value="{{ \App\Enum\Role::MANAGER->value }}">{{ \App\Enum\Role::MANAGER->name }}</option>
                             </select>
                         </div>
+
                         <!--end::Input group-->
+
+
+                        {{-- Assign Manager (USER only) --}}
+                        <div class="mb-10 d-none" id="assign_manager_wrapper">
+                            <label class="required form-label">Assign Manager</label>
+                            <select class="form-select form-select-solid" name="manager_id" id="manager_select">
+                                <option value="">Select Manager</option>
+                            </select>
+                        </div>
+
+                        {{-- Manager Account Number (MANAGER only) --}}
+                        <div class="mb-10 d-none" id="manager_account_wrapper">
+                            <label class="required form-label">Manager Account Number</label>
+                            <input type="text"
+                                   class="form-control form-control-solid"
+                                   name="manager_account"
+                                   placeholder="Enter account number">
+                        </div>
+
 
 
                         <!--begin::Input group-->
@@ -281,6 +301,26 @@
 
                             </select>
                         </div>
+
+                        {{-- Assign Manager (USER only) --}}
+                        <div class="mb-10 d-none" id="edit_assign_manager_wrapper">
+                            <label class="required form-label">Assign Manager</label>
+                            <select class="form-select form-select-solid" name="manager_id" id="edit_manager_select">
+                                <option value="">Select Manager</option>
+                            </select>
+                        </div>
+
+                        {{-- Manager Account Number (MANAGER only) --}}
+                        <div class="mb-10 d-none" id="edit_manager_account_wrapper">
+                            <label class="required form-label">Manager Account Number</label>
+                            <input type="text"
+                                   class="form-control form-control-solid"
+                                   name="manager_account"
+                                   id="edit_manager_account"
+                                   placeholder="Enter account number">
+                        </div>
+
+
                         <!-- Password -->
                         <div class="input-group mb-5">
                             <input type="password" class="form-control" name="password" id="edit_passwordInput" placeholder="Password" aria-label="Password" aria-describedby="edit_basic-addon2"/>

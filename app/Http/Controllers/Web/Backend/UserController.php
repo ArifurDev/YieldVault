@@ -8,7 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Mail\Api\V1\SendOtpMail;
 use App\Mail\NotifyUser;
 use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -25,7 +27,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data = User::whereNot('role', 'admin')->latest();
+            $data = User::where('role', '!=', 'admin')->latest();
 
             return DataTables::of($data)
 //                ->addIndexColumn()
@@ -91,8 +93,14 @@ class UserController extends Controller
             'password'    => ['required', 'string', 'min:8'],
             'avatar'      => ['nullable', 'file', 'max:2048', 'mimes:jpeg,jpg,png'],
             'role'        => ['required', new Enum(Role::class)],
+           // USER only
+           'manager_id' => 'required_if:role,user|nullable|exists:users,id',
+
+           // MANAGER only
+           'manager_account' => 'required_if:role,manager|nullable|string|max:50',
         ]);
 
+        DB::beginTransaction();
         try {
             // upload avatar
             if ($request->hasFile('avatar')) {
@@ -109,23 +117,40 @@ class UserController extends Controller
                 'password'   => Hash::make($validData['password']),
                 'avatar'     => $validData['avatar'] ?? null,
                 'role'       => $validData['role'],
+                // assign manager only if USER
+                'manager_id '     => $validData['role'] === Role::USER->value
+                    ? $validData['manager_id']
+                    : null,
+
+                // store account only if MANAGER
+                'account_number' => $validData['role'] === Role::MANAGER->value
+                    ? $validData['manager_account']
+                    : null,
             ]);
 
-            $title = "Welcome to " . config('app.name') . "! Your Account Has Been Created";
+            // create wallet
+            Wallet::create([
+                'user_id' => $user->id,
+                'balance' => 0
+            ]);
 
-            $message = "Dear " . $user->first_name . ",\n\n"
-                . "We’re thrilled to welcome you to " . config('app.name') . "! Your account has been successfully created with the following details:\n\n"
-                . "- Email: " . $user->email . "\n"
-                . "- Name: " . $user->first_name . " " . $user->last_name . "\n\n"
-                . "You can now log in and start exploring all the features we have to offer. If you have any questions or need assistance, feel free to contact our support team.\n\n"
-                . "Best regards,\n"
-                . "The " . config('app.name') . " Team";
-
-            // send mail to this user mail
-            Mail::to($user->email)->send(new NotifyUser($title,$message));
+//            $title = "Welcome to " . config('app.name') . "! Your Account Has Been Created";
+//
+//            $message = "Dear " . $user->first_name . ",\n\n"
+//                . "We’re thrilled to welcome you to " . config('app.name') . "! Your account has been successfully created with the following details:\n\n"
+//                . "- Email: " . $user->email . "\n"
+//                . "- Name: " . $user->first_name . " " . $user->last_name . "\n\n"
+//                . "You can now log in and start exploring all the features we have to offer. If you have any questions or need assistance, feel free to contact our support team.\n\n"
+//                . "Best regards,\n"
+//                . "The " . config('app.name') . " Team";
+//
+//            // send mail to this user mail
+//            Mail::to($user->email)->send(new NotifyUser($title,$message));
+            DB::commit();
 
             return redirect()->back()->with('success', 'User Created Successfully');
         }catch (\Exception $exception){
+            DB::rollBack();
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
@@ -149,8 +174,9 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
+        DB::beginTransaction();
         try {
-            $user = User::findOrFail($id);
+            $user = User::with('wallet')->findOrFail($id);
 
             $validated = $request->validate([
                 'first_name'    => ['required', 'string', 'max:255'],
@@ -160,6 +186,9 @@ class UserController extends Controller
                 'avatar'        => ['nullable', 'file', 'max:2048', 'mimes:jpeg,jpg,png'],
                  'role'         => ['required', new Enum(Role::class)],
                 'avatar_remove' => ['nullable', 'boolean'],
+                //  ROLE BASED
+                'manager_id'      => ['required_if:role,user', 'nullable', 'exists:users,id'],
+                'manager_account' => ['required_if:role,manager', 'nullable', 'string', 'max:50'],
             ]);
 
             // Update user fields
@@ -167,6 +196,18 @@ class UserController extends Controller
             $user->last_name  = $validated['last_name'];
             $user->email      = $validated['email'];
             $user->role       = $validated['role'];
+
+            // USER → assign manager
+            if ($validated['role'] === Role::USER->value) {
+                $user->manager_id = $validated['manager_id'];
+                $user->account_number = null; // cleanup
+            }
+
+            // MANAGER → account number
+            if ($validated['role'] === Role::MANAGER->value) {
+                $user->manager_id = null; // cleanup
+                $user->account_number = $validated['manager_account'];
+            }
 
             // Handle avatar
             if ($request->hasFile('avatar')) {
@@ -189,12 +230,23 @@ class UserController extends Controller
                 $user->password = Hash::make($validated['password']);
             }
 
+            // if not found
+            if(!$user->wallet)
+            {
+                Wallet::create([
+                    'user_id' => $user->id,
+                    'balance' => 0
+                ]);
+            }
+
             $user->save();
 
+            DB::commit();
             return response()->json(['message' => 'User updated successfully'], 200);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Validation failed: ' . $e->getMessage(), 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(['message' => 'Failed to update user: ' . $e->getMessage()], 500);
         }
     }
@@ -232,4 +284,18 @@ class UserController extends Controller
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
         }
     }
+
+    public function managers()
+    {
+        $managers = User::where('role', Role::MANAGER->value)
+            ->select('id', 'first_name', 'last_name')
+            ->orderBy('first_name')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'data' => $managers
+        ]);
+    }
+
 }

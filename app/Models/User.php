@@ -35,7 +35,9 @@ class User extends Authenticatable implements JWTSubject
         'is_notify',
         'kyc_status',
         'ref_code',
-        'ref_id'
+        'ref_id',
+        'account_number',
+        'manager_id',
     ];
 
     /**
@@ -59,6 +61,8 @@ class User extends Authenticatable implements JWTSubject
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_notify' => 'boolean',
+            'account_number' => 'string',
+            'manager_id' => 'integer',
             'role' => Role::class,
         ];
     }
@@ -129,4 +133,9 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(WithdrawRequest::class);
     }
 
+
+    public function manager()
+    {
+        return $this->belongsTo(User::class, 'manager_id');
+    }
 }

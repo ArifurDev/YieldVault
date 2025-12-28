@@ -19,6 +19,7 @@ class WalletController extends Controller
             $user = auth()->user();
 
             $wallet = $user->wallet;
+            $manager = $user->manager;
 
             // custom response
             $data = [
@@ -26,6 +27,17 @@ class WalletController extends Controller
                 'last_updated' => $wallet?->updated_at
                     ? $wallet->updated_at->format('M d, Y \a\t H:i')
                     : null,
+                'manager' => $manager ? [
+                    'id' => $manager->id,
+                    'first_name' => $manager->first_name,
+                    'last_name' => $manager->last_name,
+
+                    // ✅ correct column name
+                    'account_number' => $manager->manager_account,
+
+                    // ✅ generate manager assigned id (MNG-101)
+                    'manager_accsgn_id' => 'MNG-' . str_pad($manager->id, 3, '0', STR_PAD_LEFT),
+                ] : null,
             ];
 
             return $this->sendResponse($data, 'Wallet retrieved successfully');

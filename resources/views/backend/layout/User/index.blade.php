@@ -182,6 +182,126 @@
                 });
 
 
+                // role based show input
+                // Load managers via AJAX
+                function loadManagers(selectedId = null) {
+                    $.ajax({
+                        url: "{{ route('admin.managers') }}",
+                        type: "GET",
+                        success: function (response) {
+                            if (!response.status) return;
+
+                            let options = '<option value="">Select Manager</option>';
+
+                            response.data.forEach(manager => {
+                                options += `
+                        <option value="${manager.id}" ${selectedId == manager.id ? 'selected' : ''}>
+                            ${manager.first_name} ${manager.last_name}
+                        </option>
+                    `;
+                            });
+
+                            $('#manager_select').html(options);
+                        },
+                        error: function () {
+                            Swal.fire('Error', 'Failed to load managers', 'error');
+                        }
+                    });
+                }
+
+                // Handle role change
+                function handleRoleChange(role) {
+
+                    // Hide everything first
+                    $('#assign_manager_wrapper').addClass('d-none');
+                    $('#manager_account_wrapper').addClass('d-none');
+
+                    // Clear values
+                    $('#manager_select').prop('selectedIndex', 0);
+                    $('input[name="manager_account"]').val('');
+
+                    if (role === 'user') {
+                        $('#assign_manager_wrapper').removeClass('d-none');
+                        loadManagers();
+                    }
+
+                    if (role === 'manager') {
+                        $('#manager_account_wrapper').removeClass('d-none');
+                    }
+                }
+
+                // Role dropdown change
+                $('#role_select').on('change', function () {
+                    handleRoleChange($(this).val());
+                });
+
+                // Reset state when modal opens
+                $('#kt_modal_add_user').on('shown.bs.modal', function () {
+                    handleRoleChange($('#role_select').val());
+                });
+                // end role based show input
+
+                // edit
+                function loadManagersForEdit(selectedId = null) {
+                    $.ajax({
+                        url: "{{ route('admin.managers') }}",
+                        type: "GET",
+                        success: function (response) {
+                            if (!response.status) return;
+
+                            let options = '<option value="">Select Manager</option>';
+
+                            response.data.forEach(manager => {
+                                options += `
+                    <option value="${manager.id}" ${selectedId == manager.id ? 'selected' : ''}>
+                        ${manager.first_name} ${manager.last_name}
+                    </option>
+                `;
+                            });
+
+                            $('#edit_manager_select').html(options);
+                        }
+                    });
+                }
+
+
+                function handleEditRoleChange(role, user = null) {
+
+                    // hide all
+                    $('#edit_assign_manager_wrapper').addClass('d-none');
+                    $('#edit_manager_account_wrapper').addClass('d-none');
+
+                    // clear values
+                    $('#edit_manager_select').prop('selectedIndex', 0);
+                    $('#edit_manager_account').val('');
+
+                    if (role === 'user') {
+                        $('#edit_assign_manager_wrapper').removeClass('d-none');
+                        loadManagersForEdit(user?.manager_id);
+                    }
+
+                    if (role === 'manager') {
+                        $('#edit_manager_account_wrapper').removeClass('d-none');
+                        $('#edit_manager_account').val(user?.account_number ?? '');
+                    }
+                }
+
+
+                $('#edit_role').on('change', function () {
+                    handleEditRoleChange($(this).val());
+                });
+
+
+
+                // end edit
+
+
+
+
+
+
+
+
 
 
 
@@ -193,7 +313,8 @@
                         url: "{{ route('user.edit', ['id' => '__id__']) }}".replace('__id__', userId),
                         type: "GET",
                         success: function(response) {
-                            console.log(response);
+                            const user = response.user;
+
                             // Update form action
                             $('#kt_modal_edit_user_form').attr('action', "{{ route('user.update', ['id' => '__id__']) }}".replace('__id__', userId));
                             // Populate form fields
@@ -205,6 +326,9 @@
                             $('#edit_avatar_preview').css('background-image', 'url(' + (response.user.avatar ? response.user.avatar : "{{ asset('backend/assets/media/avatars/300-1.jpg') }}") + ')');
                             // Reset avatar remove input
                             $('input[name="avatar_remove"]').val('');
+                            // 🔥 ROLE BASED UI (FIXED)
+                            handleEditRoleChange(user.role, user);
+
                             // Show modal
                             $('#kt_modal_edit_user').modal('show');
                         },

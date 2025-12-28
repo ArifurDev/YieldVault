@@ -128,3 +128,6 @@ Route::prefix('/wallets')->controller(WalletController::class)->group(function (
     Route::get('/show/{id}', 'show')->name('wallet.show');
     Route::put('/update/{id}', 'update')->name('wallet.update');
 });
+
+
+Route::get('/admin/managers', [UserController::class, 'managers'])->name('admin.managers');
