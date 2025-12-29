@@ -125,9 +125,10 @@ Route::prefix('/levels')->controller(LevelController::class)->group(function () 
 //! Route for Wallet Management
 Route::prefix('/wallets')->controller(WalletController::class)->group(function () {
     Route::get('/', 'index')->name('wallet.index');
-    Route::get('/show/{id}', 'show')->name('wallet.show');
+    Route::get('/wallet/{user}/transactions', 'show')->name('wallet.show');
     Route::put('/update/{id}', 'update')->name('wallet.update');
-});
+
+    Route::post('/wallet/admin/action',  'adminWalletAction')->name('wallet.admin.action');});
 
 
 Route::get('/admin/managers', [UserController::class, 'managers'])->name('admin.managers');

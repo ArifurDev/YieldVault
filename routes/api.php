@@ -87,7 +87,9 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
      * wallet management
      */
     Route::prefix('v1/wallet')->controller(WalletController::class)->group(function () {
+        Route::get('/get-filter-data', 'getFilterData');
         Route::get('/', 'getWallet');
+        Route::get('/transactions', 'getTransactions');
     });
 
 

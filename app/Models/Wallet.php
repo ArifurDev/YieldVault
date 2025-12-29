@@ -18,7 +18,7 @@ class Wallet extends Model
 
     /* =========================  Relationships  ========================= */
 
-    public function user()
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class);
     }

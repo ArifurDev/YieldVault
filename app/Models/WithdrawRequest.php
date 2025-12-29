@@ -20,12 +20,12 @@ class WithdrawRequest extends Model
 
     /* ========================= Relationships ========================= */
 
-    public function user()
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function manager()
+    public function manager(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'manager_id');
     }

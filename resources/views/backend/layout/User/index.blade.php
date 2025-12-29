@@ -292,18 +292,7 @@
                 });
 
 
-
-                // end edit
-
-
-
-
-
-
-
-
-
-
+                // end ed
 
                 // edit modal show
                 $(document).on('click', '.edit-user-btn', function(e) {

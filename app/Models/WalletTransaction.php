@@ -23,12 +23,12 @@ class WalletTransaction extends Model
 
     /* ========================= Relationships ========================= */
 
-    public function fromUser()
+    public function fromUser(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'from_user_id');
     }
 
-    public function toUser()
+    public function toUser(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'to_user_id');
     }
