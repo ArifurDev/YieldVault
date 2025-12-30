@@ -90,6 +90,8 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
         Route::get('/get-filter-data', 'getFilterData');
         Route::get('/', 'getWallet');
         Route::get('/transactions', 'getTransactions');
+        Route::post('/deposit-request', 'depositRequest');
+        Route::post('/withdraw-request', 'withdrawRequest');
     });
 
 

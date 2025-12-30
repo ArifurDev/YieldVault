@@ -10,6 +10,8 @@ class DepositRequest extends Model
         'user_id',
         'manager_id',
         'amount',
+        'wallet_number',
+        'proof_path',
         'status',
         'remarks',
     ];

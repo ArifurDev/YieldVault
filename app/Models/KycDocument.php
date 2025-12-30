@@ -20,7 +20,6 @@ class KycDocument extends Model
         'document_type'    => 'string',
         'file_side_1_path' => 'string',
         'file_side_2_path' => 'string',
-        'status'           => 'string',
         'rejection_reason' => 'string',
     ];
 

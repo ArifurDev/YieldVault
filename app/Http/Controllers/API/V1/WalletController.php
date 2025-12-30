@@ -5,14 +5,23 @@ namespace App\Http\Controllers\API\V1;
 use App\Enum\Wallet\TransactionSource;
 use App\Enum\Wallet\TransactionStatus;
 use App\Enum\Wallet\TransactionType;
+use App\Helpers\helpers;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Wallet\depositRequest;
 use App\Http\Requests\Api\V1\Wallet\getFilterDataRequest;
 use App\Http\Requests\Api\V1\Wallet\getTransactionRequest;
+use App\Http\Requests\Api\V1\Wallet\withdrawRequest;
+use App\Http\Resources\Api\V1\Wallet\DepositRequestResource;
 use App\Http\Resources\Api\V1\Wallet\getTransactionResource;
+use App\Http\Resources\Api\V1\Wallet\WithdrawRequestResource;
+use App\Models\User;
 use App\Models\WalletTransaction;
+use App\Notifications\UniversalNotification;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class WalletController extends Controller
 {
@@ -99,49 +108,167 @@ class WalletController extends Controller
      */
     public function getTransactions(getTransactionRequest $request)
     {
-        // get current auth
-        $user      = auth()->user();
-        $validated = $request->validated();
+        try {
+            // get current auth
+            $user      = auth()->user();
+            $validated = $request->validated();
 
-        $type    = $validated['type'];
-        $source  = $validated['source'];
-        $status  = $validated['status'];
-        $page    = $validated['page'];
-        $perPage = $validated['per_page'];
+            $type    = $validated['type'];
+            $source  = $validated['source'];
+            $status  = $validated['status'];
+            $page    = $validated['page'] ? $validated['page'] : 1;
+            $perPage = $validated['per_page'] ? $validated['per_page'] : 10;
 
 
-        $transactions = WalletTransaction::with([
-            'fromUser:id,first_name,last_name,role',
-            'toUser:id,first_name,last_name,role',
-        ])
-            ->where(function ($q) use ($user) {
-                $q->where('from_user_id', $user->id)
-                    ->orWhere('to_user_id', $user->id);
-            })
+            $transactions = WalletTransaction::with([
+                'fromUser:id,first_name,last_name,role',
+                'toUser:id,first_name,last_name,role',
+            ])
+                ->where(function ($q) use ($user) {
+                    $q->where('from_user_id', $user->id)
+                        ->orWhere('to_user_id', $user->id);
+                })
 
-            // Enum filters
-            ->when($request->type, fn ($q) =>
-            $q->where('type', $request->type)
-            )
-            ->when($request->source, fn ($q) =>
-            $q->where('source', $request->source)
-            )
-            ->when($request->status, fn ($q) =>
-            $q->where('status', $request->status)
-            )
+                // Enum filters
+                ->when($request->type, fn ($q) =>
+                $q->where('type', $request->type)
+                )
+                ->when($request->source, fn ($q) =>
+                $q->where('source', $request->source)
+                )
+                ->when($request->status, fn ($q) =>
+                $q->where('status', $request->status)
+                )
 
-            // Date based filter
-            ->when($request->from_date, function ($q) use ($request) {
-                $q->whereDate('created_at', '>=', $request->from_date);
-            })
-            ->when($request->to_date, function ($q) use ($request) {
-                $q->whereDate('created_at', '<=', $request->to_date);
-            })
+                // Date based filter
+                ->when($request->from_date, function ($q) use ($request) {
+                    $q->whereDate('created_at', '>=', $request->from_date);
+                })
+                ->when($request->to_date, function ($q) use ($request) {
+                    $q->whereDate('created_at', '<=', $request->to_date);
+                })
 
-            ->orderByDesc('created_at')
-            ->paginate($perPage);
+                ->orderByDesc('created_at')
+                ->paginate($perPage);
 
-        return $this->sendResponse(getTransactionResource::collection($transactions),'Wallet transaction history retrieved successfully');
+            return $this->sendResponse(getTransactionResource::collection($transactions),'Wallet transaction history retrieved successfully',200,[],$transactions);
+        }catch (\Throwable $e) {
+            return $this->sendError("Failed to retrieve wallet transactions",[],500);
+        }
     }
 
+
+    /**
+     * Deposit Request
+     */
+    public function depositRequest(depositRequest $request)
+    {
+        try {
+            $validated = $request->validated();
+            // get current auth
+            $user = auth()->user();
+
+            // check and manager is assigned or not
+            if (!$user->manager_id) {
+                return $this->sendError('Manager not assigned', [], 422);
+            }
+
+            $imagePaths = null;
+            // Update avatar if provided
+            if ($request->hasFile('proof')) {
+                $file = $request->file('proof');
+                $mediaFile = 'proof_'.time() . Str::random(10) . Str::uuid() . '_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
+                $imagePaths = Helpers::uploadFile('proof',$file,$mediaFile,config('app.file_system')); // store url
+            }
+
+            $deposit = \App\Models\DepositRequest::create([
+                'user_id'       => $user->id,
+                'manager_id'    => $user->manager_id,
+                'amount'        => $validated['amount'],
+                'proof_path'    => $imagePaths,
+                'status'        => TransactionStatus::PENDING->value,
+                'remarks'       => $validated['remarks'] ?? null,
+            ]);
+
+            // Notify manager
+            $manager = User::find($user->manager_id);
+
+            if ($manager) {
+                $manager->notify(
+                    new UniversalNotification(
+                        'New Deposit Request',
+                        "{$user->first_name} {$user->last_name} has submitted a deposit request of {$deposit->amount}.",
+                        'info',
+                        [
+                            'id'         => $deposit->id,
+                            'user_id'    => $user->id,
+                            'amount'     => $deposit->amount,
+                            'action'     => 'deposit_review',
+                        ]
+                    )
+                );
+            }
+
+            return $this->sendResponse( new DepositRequestResource($deposit), 'Deposit request submitted successfully');
+        }catch (\Exception $e) {
+            Log::error('Deposit request failed', [
+                'user_id' => auth()->id(),
+                'error'   => $e->getMessage(),
+            ]);
+            return $this->sendError('Failed to submitted deposit request.',[],500);
+        }
+    }
+
+    /**
+     * Withdraw Request
+     */
+    public function withdrawRequest(withdrawRequest $request)
+    {
+        try {
+            $validated = $request->validated();
+            $user = auth()->user();
+
+            if (!$user->manager_id) {
+                return $this->sendError('Manager not assigned', [], 422);
+            }
+
+            if (($user->wallet?->balance ?? 0) < $validated['amount']) {
+                return $this->sendError('Insufficient wallet balance', [], 422);
+            }
+
+            $withdraw = \App\Models\WithdrawRequest::create([
+                'user_id'    => $user->id,
+                'manager_id' => $user->manager_id,
+                'amount'     => $validated['amount'],
+                'status'     => TransactionStatus::PENDING->value,
+                'remarks'    => $validated['remarks'] ?? null,
+            ]);
+
+            // 🔔 Notify manager
+            $manager = User::find($user->manager_id);
+            if ($manager) {
+                $manager->notify(
+                    new UniversalNotification(
+                        'New Withdraw Request',
+                        "{$user->first_name} {$user->last_name} has requested a withdrawal of ৳{$withdraw->amount}. Please review.",
+                        'info',
+                        [
+                            'id'          => $withdraw->id,
+                            'user_id'     => $user->id,
+                            'amount'      => $withdraw->amount,
+                            'action'      => 'withdraw_review',
+                        ]
+                    )
+                );
+            }
+
+            return $this->sendResponse(new WithdrawRequestResource($withdraw), 'Withdraw request submitted successfully');
+        }catch (\Exception $e) {
+            Log::error('Deposit request failed', [
+                'user_id' => auth()->id(),
+                'error'   => $e->getMessage(),
+            ]);
+            return $this->sendError('Failed to submitted Withdraw request.',[],500);
+        }
+    }
 }
