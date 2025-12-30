@@ -7,6 +7,9 @@ use App\Enum\Wallet\TransactionStatus;
 use App\Enum\Wallet\TransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Wallet\getFilterDataRequest;
+use App\Http\Requests\Api\V1\Wallet\getTransactionRequest;
+use App\Http\Resources\Api\V1\Wallet\getTransactionResource;
+use App\Models\WalletTransaction;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -18,12 +21,17 @@ class WalletController extends Controller
     /**
      * get wallet filter data
      */
-    public function getFilterData(Request $request)
+    public function getFilterData(getFilterDataRequest $request)
     {
+       $validated = $request->validated();
         try {
             $cacheKey = 'wallet_filter_data_v1';
             $cacheTtl = 3600; // 1 hour
+            $cacheReset = $validated['reset'];
 
+            if ($cacheReset) {
+                Cache::forget($cacheKey);
+            }
             $data = Cache::remember($cacheKey, $cacheTtl, function () {
                 return [
                     'type' => collect(TransactionType::cases())->map(fn ($c) => [
@@ -89,10 +97,51 @@ class WalletController extends Controller
     /**
      * list of wallet transaction history
      */
-    public function getTransactions()
+    public function getTransactions(getTransactionRequest $request)
     {
         // get current auth
-        $user = auth()->user();
+        $user      = auth()->user();
+        $validated = $request->validated();
+
+        $type    = $validated['type'];
+        $source  = $validated['source'];
+        $status  = $validated['status'];
+        $page    = $validated['page'];
+        $perPage = $validated['per_page'];
+
+
+        $transactions = WalletTransaction::with([
+            'fromUser:id,first_name,last_name,role',
+            'toUser:id,first_name,last_name,role',
+        ])
+            ->where(function ($q) use ($user) {
+                $q->where('from_user_id', $user->id)
+                    ->orWhere('to_user_id', $user->id);
+            })
+
+            // Enum filters
+            ->when($request->type, fn ($q) =>
+            $q->where('type', $request->type)
+            )
+            ->when($request->source, fn ($q) =>
+            $q->where('source', $request->source)
+            )
+            ->when($request->status, fn ($q) =>
+            $q->where('status', $request->status)
+            )
+
+            // Date based filter
+            ->when($request->from_date, function ($q) use ($request) {
+                $q->whereDate('created_at', '>=', $request->from_date);
+            })
+            ->when($request->to_date, function ($q) use ($request) {
+                $q->whereDate('created_at', '<=', $request->to_date);
+            })
+
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
+
+        return $this->sendResponse(getTransactionResource::collection($transactions),'Wallet transaction history retrieved successfully');
     }
 
 }
