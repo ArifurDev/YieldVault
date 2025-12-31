@@ -7,7 +7,9 @@ use App\Enum\Wallet\TransactionSource;
 use App\Enum\Wallet\TransactionStatus;
 use App\Enum\Wallet\TransactionType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Investment\getInvestmentRequest;
 use App\Http\Requests\Api\V1\Investment\InvestNowRequest;
+use App\Http\Resources\Api\V1\Investment\getInvestmentResource;
 use App\Models\Package;
 use App\Models\User;
 use App\Models\UserInvestment;
@@ -83,16 +85,24 @@ class InvestmentController extends Controller
     /**
      * My Investments
      */
-    public function myInvestments()
+    public function myInvestments(getInvestmentRequest $request)
     {
-        $investments = UserInvestment::with('package')
-            ->where('user_id', auth()->id())
-            ->latest()
-            ->get();
+        try {
+            $validated = $request->validated();
+            $page      = $validated['page'] ?? 1;
+            $perPage   = $validated['per_page'] ?? 10;
 
-        return response()->json([
-            'status' => true,
-            'data'   => $investments,
-        ]);
+            $investments = UserInvestment::with('package')
+                ->where('user_id', auth()->id())
+                ->latest()->paginate($perPage);
+
+            return $this->sendResponse(getInvestmentResource::collection($investments), 'My investments retrieved successfully',200,[],$investments);
+        }catch (\Exception $e){
+            Log::error('Investment list failed ', [
+                'user_id' => auth()->user()->id,
+                'exception' => $e->getMessage()
+            ]);
+            return $this->sendError('Failed to list investments.', [], 500);
+        }
     }
 }
