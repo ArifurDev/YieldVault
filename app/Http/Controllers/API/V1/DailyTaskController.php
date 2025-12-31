@@ -2,18 +2,22 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Enum\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Task\CompletedTaskRequest;
 use App\Http\Resources\Api\V1\Task\getTodayTaskResource;
 use App\Models\DailyTask;
 use App\Models\DailyTaskLog;
+use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class DailyTaskController extends Controller
 {
     use ApiResponse;
+
     /**
      * list of today task
      */
@@ -22,16 +26,16 @@ class DailyTaskController extends Controller
         try {
             // get current data
             $today = now()->format('Y-m-d');
-            $tasks = DailyTask::with(['task', 'logs' => function($q) {
-                    $q->where('user_id', auth()->id());
-                }])
+            $tasks = DailyTask::with(['task', 'logs' => function ($q) {
+                $q->where('user_id', auth()->id());
+            }])
                 ->where('date', $today)
                 ->where('is_active', 1)
                 ->get();
 
-            return $this->sendResponse(getTodayTaskResource::collection($tasks),"List of today tasks retrieved successfully.");
-        }catch (\Exception $e){
-            return $this->sendError("Failed to retrieved today task:".$e->getMessage(),[],500);
+            return $this->sendResponse(getTodayTaskResource::collection($tasks), "List of today tasks retrieved successfully.");
+        } catch (\Exception $e) {
+            return $this->sendError("Failed to retrieved today task:" . $e->getMessage(), [], 500);
         }
     }
 
@@ -43,43 +47,42 @@ class DailyTaskController extends Controller
         $validated = $request->validated();
 
         try {
-            //get current auth
-            $user = auth()->user();
+             //get current auth
+             $user = auth()->user();
 
-            // get current data
-            $today = now()->format('Y-m-d');
+             // get current data
+             $today = now()->format('Y-m-d');
 
-            // find daily task
-            $dailyTask = DailyTask::with('task')->find($validated['daily_task_id']);
-            // check if not found
-            if (!$dailyTask) {
-                return $this->sendError("Daily task not found",[], 404);
-            }
+             // find daily task
+             $dailyTask = DailyTask::with('task')->find($validated['daily_task_id']);
+             // check if not found
+             if (!$dailyTask) {
+                 return $this->sendError("Daily task not found", [], 404);
+             }
 
-            // check if task is for today
-            if ($dailyTask->date->format('Y-m-d') !== $today) {
-                return $this->sendError("You can only complete today's task.", [], 400);
-            }
+             // check if task is for today
+             if ($dailyTask->date->format('Y-m-d') !== $today) {
+                 return $this->sendError("You can only complete today's task.", [], 400);
+             }
 
-            // prevent double completion
-            $alreadyDone = DailyTaskLog::where('daily_task_id', $dailyTask->id)
-                ->where('user_id', $user->id)
-                ->exists();
-            if ($alreadyDone) {
-                return $this->sendError("You already completed this task.",[],400);
-            }
-
-            // Create log
-            DailyTaskLog::create([
-                'user_id'       => $user->id,
-                'task_id'       => $dailyTask->task_id,
-                'daily_task_id' => $dailyTask->id,
-                'xp_rewarded'   => $dailyTask->task->xp,
-            ]);
-
-            return $this->sendResponse([],"Daily task completed.",200);
-        }catch (\Exception $e){
-            return $this->sendError("Failed to completed daily task:".$e->getMessage(),[],500);
+             // prevent double completion
+             $alreadyDone = DailyTaskLog::where('daily_task_id', $dailyTask->id)
+                 ->where('user_id', $user->id)
+                 ->exists();
+             if ($alreadyDone) {
+                 return $this->sendError("You already completed this task.", [], 400);
+             } else {
+             // Create log
+             DailyTaskLog::create([
+               'user_id'       => $user->id,
+               'task_id'       => $dailyTask->task_id,
+               'daily_task_id' => $dailyTask->id,
+               'xp_rewarded'   => $dailyTask->task->xp,
+             ]);
+                 return $this->sendResponse([], "Daily task completed.", 200);
+             }
+        } catch (\Exception $e) {
+            return $this->sendError("Failed to completed daily task:" . $e->getMessage(), [], 500);
         }
     }
 
@@ -147,11 +150,11 @@ class DailyTaskController extends Controller
                 $task = $log->task;
 
                 $history[$date][] = [
-                    'task_id'    => $task->id,
+                    'task_id' => $task->id,
                     'task_title' => $task->title,
-                    'xp'         => $task->xp,
-                    'type'       => $task->type,
-                    'status'     => 'completed',
+                    'xp' => $task->xp,
+                    'type' => $task->type,
+                    'status' => 'completed',
                 ];
             }
 
@@ -179,11 +182,11 @@ class DailyTaskController extends Controller
 
                     if ($alreadyCompleted === 0) {
                         $history[$date][] = [
-                            'task_id'    => $task->id,
+                            'task_id' => $task->id,
                             'task_title' => $task->title,
-                            'xp'         => $task->xp,
-                            'type'       => $task->type,
-                            'status'     => 'pending',
+                            'xp' => $task->xp,
+                            'type' => $task->type,
+                            'status' => 'pending',
                         ];
                     }
                 }
@@ -198,11 +201,11 @@ class DailyTaskController extends Controller
             $total_xp = DailyTask::join('tasks', 'daily_tasks.task_id', '=', 'tasks.id')
                 ->sum('tasks.xp');
 
-            $response = (object) [
-                'total_xp'     => (int) $total_xp,
-                'completed_xp' => (int) $completed_xp,
-                'streak'       => $streak,
-                'history'      => $history,
+            $response = (object)[
+                'total_xp' => (int)$total_xp,
+                'completed_xp' => (int)$completed_xp,
+                'streak' => $streak,
+                'history' => $history,
             ];
 
             return $this->sendResponse($response, "Tasks history retrieved successfully.");
@@ -212,6 +215,5 @@ class DailyTaskController extends Controller
             return $this->sendError("Failed to retrieve daily tasks history.", [], 500);
         }
     }
-
 
 }

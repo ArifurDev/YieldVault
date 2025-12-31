@@ -6,6 +6,7 @@ use App\Http\Controllers\API\V1\Auth\User\ProfileController;
 use App\Http\Controllers\API\V1\Auth\User\SocialAuthController;
 use App\Http\Controllers\API\V1\DailyTaskController;
 use App\Http\Controllers\API\V1\FirebaseTokenController;
+use App\Http\Controllers\API\V1\InvestmentController;
 use App\Http\Controllers\API\V1\KycController;
 use App\Http\Controllers\API\V1\LevelController;
 use App\Http\Controllers\API\V1\PackageController;
@@ -69,6 +70,7 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
         Route::get('/history', 'historyTask');
     });
 
+
     /**
      * level management
      */
@@ -92,6 +94,15 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
         Route::get('/transactions', 'getTransactions');
         Route::post('/deposit-request', 'depositRequest');
         Route::post('/withdraw-request', 'withdrawRequest');
+    });
+
+    /**
+     * investment
+     */
+    Route::prefix('v1/investment')->controller(InvestmentController::class)->group(function () {
+        Route::post('/invest',  'investNow');
+        Route::get('/my',  'myInvestments');
+        Route::get('/logs/{investment}',  'logs');
     });
 
 

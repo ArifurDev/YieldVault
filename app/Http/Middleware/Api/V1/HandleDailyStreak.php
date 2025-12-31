@@ -36,6 +36,6 @@ class HandleDailyStreak
 
 
 
-        return $next($request);
+        return $response;
     }
 }

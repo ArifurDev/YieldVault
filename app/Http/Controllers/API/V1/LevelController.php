@@ -9,6 +9,7 @@ use App\Models\DailyTaskLog;
 use App\Models\Level;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class LevelController extends Controller
 {
@@ -20,6 +21,7 @@ class LevelController extends Controller
     public function getLevels()
     {
         try {
+            Log::info('duplicate route accessed');
             // get current user id
             $userId = auth()->user()->id;
 
