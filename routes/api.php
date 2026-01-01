@@ -5,6 +5,7 @@ use App\Http\Controllers\API\V1\Auth\User\ForgotPasswordController;
 use App\Http\Controllers\API\V1\Auth\User\ProfileController;
 use App\Http\Controllers\API\V1\Auth\User\SocialAuthController;
 use App\Http\Controllers\API\V1\DailyTaskController;
+use App\Http\Controllers\API\V1\DynamicPageController;
 use App\Http\Controllers\API\V1\FirebaseTokenController;
 use App\Http\Controllers\API\V1\InvestmentController;
 use App\Http\Controllers\API\V1\KycController;
@@ -131,4 +132,10 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
 //! Route for Referral link
 Route::get('v1/ref/{token}', [ReferralController::class, 'handle']);
 
-
+/**
+ * dynamic page
+ */
+Route::prefix('v1/dynamic-pages')->controller(DynamicPageController::class)->group(function () {
+    Route::get('/', 'getTitle');
+    Route::get('/{slug}', 'getDetails');
+});
