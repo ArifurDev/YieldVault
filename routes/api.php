@@ -59,6 +59,7 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
      */
     Route::prefix('v1/auth')->controller(KycController::class)->group(function () {
         Route::post('/kyc/submit-document', 'submitDocument');
+        Route::put('/submit-document', 'submitDocument');
     });
 
     /**
@@ -113,7 +114,7 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
      */
     Route::prefix('v1')->controller(KycController::class)->group(function () {
         Route::get('/kyc', 'index');
-        Route::get('/kyc-documents/{id}', 'show');      // View a single KYC document
+        Route::get('/kyc-documents/{id?}', 'show');      // View a single KYC document
         Route::put('/kyc-documents/{id}/review', 'update'); // Approve/Reject KYC
     })->middleware(['is_manager']);
 
