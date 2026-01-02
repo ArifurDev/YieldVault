@@ -6,6 +6,7 @@ use App\Enum\Role;
 use App\Traits\ApiResponse;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class IsManagerMiddleware

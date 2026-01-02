@@ -10,6 +10,8 @@ use App\Http\Controllers\API\V1\FirebaseTokenController;
 use App\Http\Controllers\API\V1\InvestmentController;
 use App\Http\Controllers\API\V1\KycController;
 use App\Http\Controllers\API\V1\LevelController;
+use App\Http\Controllers\Api\V1\Manager\DepositRequestController;
+use App\Http\Controllers\Api\V1\Manager\WithdrawalRequestController;
 use App\Http\Controllers\API\V1\PackageController;
 use App\Http\Controllers\API\V1\ReferralController;
 use App\Http\Controllers\API\V1\Auth\User\ReferralController as AuthUserReferralController;
@@ -63,7 +65,7 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
      */
     Route::prefix('v1/auth')->controller(KycController::class)->group(function () {
         Route::post('/kyc/submit-document', 'submitDocument');
-        Route::put('/submit-document', 'submitDocument');
+        Route::put('/update/kyc-document/{id}', 'updateDocument');
     });
 
     /**
@@ -121,6 +123,22 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
         Route::get('/kyc-documents/{id?}', 'show');      // View a single KYC document
         Route::put('/kyc-documents/{id}/review', 'update'); // Approve/Reject KYC
     })->middleware(['is_manager']);
+
+
+    Route::prefix('v1/manager')->group(function () {
+        Route::prefix('deposit-requests')->controller(DepositRequestController::class)->group(function () {
+            Route::get('/', 'index');
+            Route::get('/{id}', 'show');
+            Route::post('/{id}/approve', 'approve');
+        });
+
+        Route::prefix('withdrawal-requests')->controller(WithdrawalRequestController::class)->group(function () {
+            Route::get('/', 'index');
+            Route::post('/{id}/approve', 'approve');
+        });
+    });
+
+
 
     /**
      * Firebase Token Module

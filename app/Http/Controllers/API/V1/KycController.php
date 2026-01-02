@@ -7,12 +7,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Kyc\DocumentUpdateRequest;
 use App\Http\Requests\Api\V1\Kyc\indexRequest;
 use App\Http\Requests\Api\V1\Kyc\submissionRequest;
+use App\Http\Requests\Api\V1\Kyc\UpdateDocumentRequest;
 use App\Http\Resources\Api\V1\Kyc\getDataResource;
 use App\Http\Resources\Api\V1\Kyc\showDataResource;
 use App\Models\KycDocument;
 use App\Models\User;
 use App\Notifications\UniversalNotification;
 use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -28,9 +30,15 @@ class KycController extends Controller
     {
         $validated = $request->validated();
         try {
+            // get current auth
+            $user = auth()->user();
 
-            $page     = $validated['page'] ?? 1;
-            $perPage  = $validated['per_page'] ?? 15;
+            if (!in_array($user->role->value, ['admin', 'manager'])) {
+                return $this->sendError('You do not have permission to view this document.', [], 422);
+            }
+
+            $page = $validated['page'] ?? 1;
+            $perPage = $validated['per_page'] ?? 15;
 
             $query = KycDocument::with('user:id,first_name,last_name,email,kyc_status');
 
@@ -40,16 +48,16 @@ class KycController extends Controller
             }
 
             // Sorting
-            $sortBy  = $validated['sort_by'] ?? 'created_at';
+            $sortBy = $validated['sort_by'] ?? 'created_at';
             $sortDir = $validated['sort_dir'] ?? 'desc';
             $query->orderBy($sortBy, $sortDir);
 
             $documents = $query->paginate($perPage, ['*'], 'page', $page);
 
             return $this->sendResponse(getDataResource::collection($documents), 'KYC requests fetched successfully.');
-        }catch (\Exception $e){
-            Log::error("Failed to fetch KYC documents:".$e->getMessage());
-            return $this->sendError("Failed to fetch KYC documents:".$e->getMessage(),[],500);
+        } catch (\Exception $e) {
+            Log::error("Failed to fetch KYC documents:" . $e->getMessage());
+            return $this->sendError("Failed to fetch KYC documents:" . $e->getMessage(), [], 500);
         }
     }
 
@@ -60,8 +68,8 @@ class KycController extends Controller
     {
         try {
             $validated = $request->validated();
-            $user      = auth()->user();
-            $docType   = $validated['type'];
+            $user = auth()->user();
+            $docType = $validated['type'];
 
 
             $kycDocument = KycDocument::where('user_id', $user->id)->latest()->first();
@@ -83,11 +91,7 @@ class KycController extends Controller
                     !$request->hasFile('file_side_1') ||
                     !$request->hasFile('file_side_2')
                 ) {
-                    return $this->sendError(
-                        strtoupper($docType) . ' requires both front and back images.',
-                        [],
-                        422
-                    );
+                    return $this->sendError(strtoupper($docType) . ' requires both front and back images.', [],422);
                 }
             }
 
@@ -96,7 +100,7 @@ class KycController extends Controller
              * Upload files
              */
             $frontPath = null;
-            $backPath  = null;
+            $backPath = null;
 
             if ($request->hasFile('file_side_1')) {
                 $file = $request->file('file_side_1');
@@ -112,20 +116,20 @@ class KycController extends Controller
 
             // Create document
             KycDocument::create([
-                'user_id'          => $user->id,
-                'document_type'    => $docType,
+                'user_id' => $user->id,
+                'document_type' => $docType,
                 'file_side_1_path' => $frontPath,
                 'file_side_2_path' => $backPath,
-                'status'           => 'Pending',
+                'status' => 'Pending',
             ]);
 
 
             User::find($user->id)->update(['kyc_status' => 'Pending']);
 
-            return $this->sendResponse([],  'Document submitted successfully. Under review.',  200);
-        }catch (\Exception $e){
-            Log::error("Failed to submit KYC document:".$e->getMessage());
-            return $this->sendError("Failed to submit KYC document",[],500);
+            return $this->sendResponse([], 'Document submitted successfully. Under review.', 200);
+        } catch (\Exception $e) {
+            Log::error("Failed to submit KYC document:" . $e->getMessage());
+            return $this->sendError("Failed to submit KYC document", [], 500);
         }
 
     }
@@ -156,6 +160,120 @@ class KycController extends Controller
         return $this->sendResponse(new ShowDataResource($document), 'Document retrieved successfully.');
     }
 
+    /**
+     * update kyc document
+     */
+    public function updateDocument(UpdateDocumentRequest $request,$id)
+    {
+        try {
+            $validated = $request->validated();
+            // get current user
+            $user = auth()->user();
+            $document = KycDocument::with('user')->find($id);
+            if (!$document) {
+                return $this->sendError('Document not found.', [], 404);
+            }
+            if ($document->user_id != $user->id) {
+                return $this->sendError('You are not allowed to update this document.', [], 403);
+            }
+            // Only rejected documents can be updated
+            if ($document->status !== 'Rejected') {
+                return $this->sendError('Only rejected KYC documents can be updated.', [], 422);
+            }
+
+            /**
+             * Validate document sides again
+             */
+            if (in_array($document->document_type, ['nid', 'driving_license'])) {
+                if (
+                    !$request->hasFile('file_side_1') ||
+                    !$request->hasFile('file_side_2')
+                ) {
+                    return $this->sendError(
+                        strtoupper($document->document_type) . ' requires both front and back images.',
+                        [],
+                        422
+                    );
+                }
+            }
+
+            $oldType = $document->document_type;
+            $newType = $validated['type'];
+
+
+            // If document type changed → delete ALL old files
+            if ($oldType !== $newType) {
+
+                if ($document->file_side_1_path) {
+                    Helpers::deleteFile($document->file_side_1_path, config('app.file_system'));
+                }
+
+                if ($document->file_side_2_path) {
+                    Helpers::deleteFile($document->file_side_2_path, config('app.file_system'));
+                }
+
+                $frontPath = null;
+                $backPath  = null;
+
+            } else {
+                // Same type → replace only uploaded sides
+                $frontPath = $document->file_side_1_path;
+                $backPath  = $document->file_side_2_path;
+
+                if ($request->hasFile('file_side_1') && $frontPath) {
+                    Helpers::deleteFile($frontPath, config('app.file_system'));
+                    $frontPath = null;
+                }
+
+                if ($request->hasFile('file_side_2') && $backPath) {
+                    Helpers::deleteFile($backPath, config('app.file_system'));
+                    $backPath = null;
+                }
+            }
+
+
+            if ($newType === 'passport') {
+                if (!$request->hasFile('file_side_1') && !$request->hasFile('file_side_2')) {
+                    return $this->sendError('Passport requires at least one image.', [], 422);
+                }
+            }
+            /**
+             * UPLOAD FILES
+             */
+            if ($request->hasFile('file_side_1')) {
+                $file = $request->file('file_side_1');
+                $name = 'front_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $frontPath = Helpers::uploadFile('kyc_documents', $file, $name, config('app.file_system'));
+            }
+
+            if ($request->hasFile('file_side_2')) {
+                $file = $request->file('file_side_2');
+                $name = 'back_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $backPath = Helpers::uploadFile('kyc_documents', $file, $name, config('app.file_system'));
+            }
+
+            /**
+             * UPDATE DB
+             */
+            $document->update([
+                'document_type'    => $newType,
+                'file_side_1_path' => $frontPath,
+                'file_side_2_path' => $backPath,
+                'status'           => 'Pending',
+                'rejection_reason' => null,
+            ]);
+
+            $user->update(['kyc_status' => 'Pending']);
+
+            DB::commit();
+            return $this->sendResponse([],'KYC document updated successfully. Under review.');
+        }catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Failed to update KYC document:" . $e->getMessage());
+            return $this->sendError("Failed to update KYC document", [], 500);
+        }
+    }
+
 
     /**
      * update update Approve/Reject KYC - admin or manager
@@ -167,15 +285,15 @@ class KycController extends Controller
         try {
             // get current auth
             $user = auth()->user();
-            //        if (!in_array($user->role, ['admin', 'moderator'])){
-//            return $this->sendError('You do not have permission to view this document.', [], 422);
-//        }
+            if (!in_array($user->role->value, ['admin', 'manager'])) {
+                return $this->sendError('You do not have permission to view this document.', [], 422);
+            }
             $document = KycDocument::with('user')->find($documentId);
             if (empty($document)) {
                 return $this->sendError('Document not found.', [], 404);
             }
             $document->status = $validated['status'];
-            $document->rejection_reason = $validated['status'] == "rejected" ?  $validated['reason'] : null;
+            $document->rejection_reason = $validated['status'] == "rejected" ? $validated['reason'] : null;
             $document->save();
             // message
             $message = match ($validated['status']) {
@@ -194,7 +312,7 @@ class KycController extends Controller
             ));
 
             return $this->sendResponse([], $message);
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             Log::error("Failed to update document status:" . $e->getMessage());
             return $this->sendError("Failed to update document status:" . $e->getMessage(), [], 500);
         }

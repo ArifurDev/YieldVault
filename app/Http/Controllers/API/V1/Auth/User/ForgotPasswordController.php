@@ -81,6 +81,7 @@ class ForgotPasswordController extends Controller
         }
 
         $user = User::where('email', $email)->first();
+
         if (!$user) {
             return $this->sendError('User not found.', [], 404);
         }

@@ -159,7 +159,7 @@ class ProfileController extends Controller
 
             // Update user (anonymize)
             $user->update([
-                'first_name' => 'Deleted',
+                'first_name' => 'Anonymous',
                 'last_name'  => 'User',
                 'email'      => $deletedEmail,
                 'avatar'     => null,
