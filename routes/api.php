@@ -82,6 +82,7 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
      * level management
      */
     Route::prefix('v1/levels')->controller(LevelController::class)->group(function () {
+        Route::get('/current-progress', 'currentProgress');
         Route::get('/', 'getLevels');
     });
 
@@ -130,11 +131,15 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
             Route::get('/', 'index');
             Route::get('/{id}', 'show');
             Route::post('/{id}/approve', 'approve');
+            Route::post('/{id}/reject', 'reject');
         });
 
         Route::prefix('withdrawal-requests')->controller(WithdrawalRequestController::class)->group(function () {
             Route::get('/', 'index');
+            Route::get('/{id}', 'show');
             Route::post('/{id}/approve', 'approve');
+            Route::post('/{id}/reject', 'reject');
+            Route::post('/{id}/mark-as-paid', 'markAsPaid');
         });
     });
 

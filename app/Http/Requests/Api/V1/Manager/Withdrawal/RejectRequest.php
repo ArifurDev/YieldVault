@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\Api\V1\Manager;
+namespace App\Http\Requests\Api\V1\Manager\Withdrawal;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class getDepositRequest extends FormRequest
+class RejectRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,9 +22,7 @@ class getDepositRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'page' => 'nullable|integer',
-            'per_page' => 'nullable|integer',
-            'type' => 'nullable|re',
+            'reason' => 'required|string|max:255',
         ];
     }
 }

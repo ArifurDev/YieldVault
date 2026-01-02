@@ -26,6 +26,11 @@ class getTodayTaskResource extends JsonResource
         $userCompleted = $this->logs
             ->where('user_id', auth()->id())
             ->isNotEmpty();
+        Log::info('Task media path', [
+            'id' => $task->id,
+            'media_type' => $task->media_type,
+            'media_path' => $task->media_path,
+        ]);
 
         return [
             'id'         => $this->id,
@@ -40,7 +45,7 @@ class getTodayTaskResource extends JsonResource
                 'xp'         => $task->xp,
                 'duration'   => $task->duration,
                 'media_type' => $task->media_type,
-                'media_path' => $this->generateMediaUrl($task),
+                'media_path' => $task->media_path ? $this->generateMediaUrl($task) : null,
                 'referral_link' => $task->type->value == "invite" ? $this->generateReferralLink($task->id) : null,
             ] : null,
             'is_complete' => $userCompleted,
@@ -51,10 +56,11 @@ class getTodayTaskResource extends JsonResource
     {
         if (!$task) return null;
 
-        if (in_array($task->media_type, ['image','video'])) {
-            return $task->media_path
-                ? \App\Helpers\helpers::generateTempURL($task->media_path, config('app.file_system'))
-                : null;
+
+        $mediaType = $task->media_type?->value;
+
+        if (in_array($mediaType, ['image', 'video'])) {
+            return helpers::generateTempURL($task->media_path,config('app.file_system'));
         }
 
         if ($task->media_type === 'url') {

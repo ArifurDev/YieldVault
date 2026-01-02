@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\Api\V1\Manager;
+namespace App\Http\Resources\Api\V1\Manager\Deposit;
 
 use App\Helpers\helpers;
 use Illuminate\Http\Request;

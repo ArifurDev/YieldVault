@@ -13,6 +13,7 @@ class DepositRequest extends Model
         'wallet_number',
         'proof_path',
         'status',
+        'reject_reason',
         'remarks',
     ];
 

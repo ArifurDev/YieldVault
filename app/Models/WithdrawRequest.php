@@ -11,6 +11,7 @@ class WithdrawRequest extends Model
         'manager_id',
         'amount',
         'status',
+        'reject_reason',
         'remarks',
     ];
 
