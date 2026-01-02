@@ -76,10 +76,13 @@ class WalletController extends Controller
 
             $wallet = $user->wallet;
             $manager = $user->manager;
-
+            $pending_withdraw = $user?->withdrawRequests->where('status',TransactionStatus::PENDING->value)->sum('amount');
+            $total_earn = WalletTransaction::where('type',TransactionType::CREDIT->value)->where('status',TransactionStatus::APPROVED->value)->sum('amount');
             // custom response
             $data = [
                 'balance' => number_format($wallet?->balance ?? 0, 2),
+                'pending_withdraw' => number_format($pending_withdraw ?? 0, 2),
+                'total_earn' => number_format($total_earn ?? 0, 2),
                 'last_updated' => $wallet?->updated_at
                     ? $wallet->updated_at->format('M d, Y \a\t H:i')
                     : null,

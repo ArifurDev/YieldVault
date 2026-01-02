@@ -10,6 +10,7 @@ use App\Http\Requests\Api\V1\Profile\UpdateRequest;
 use App\Http\Resources\Api\V1\Profile\getResource;
 use App\Http\Resources\Api\V1\Profile\UpdateResource;
 use App\Traits\ApiResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -136,5 +137,53 @@ class ProfileController extends Controller
     public function refreshToken()
     {
 
+    }
+
+    /**
+     * Soft delete user account (Anonymize)
+     */
+    public function deleteAccount()
+    {
+        DB::beginTransaction();
+
+        try {
+            $user = auth()->user();
+
+            // Build unique deleted email
+            $deletedEmail = 'deleted_' . $user->id . '_' . time() . '@user.com';
+
+            // Delete avatar if exists
+            if (!empty($user->avatar)) {
+                Helpers::deleteFile($user->avatar, config('app.file_system'));
+            }
+
+            // Update user (anonymize)
+            $user->update([
+                'first_name' => 'Deleted',
+                'last_name'  => 'User',
+                'email'      => $deletedEmail,
+                'avatar'     => null,
+                'kyc_status' => 'Rejected',
+            ]);
+
+            // Delete firebase tokens
+            $user->firebaseTokens()->delete();
+
+            // revoke API tokens
+            if (method_exists($user, 'tokens')) {
+                $user->tokens()->delete();
+            }
+            DB::commit();
+            return $this->sendResponse([], 'Account deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Delete account failed', [
+                'user_id' => auth()->id(),
+                'error'   => $e->getMessage(),
+            ]);
+
+            return $this->sendError('Failed to delete account.', [], 500);
+        }
     }
 }

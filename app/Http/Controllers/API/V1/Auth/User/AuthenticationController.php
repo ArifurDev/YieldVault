@@ -12,6 +12,7 @@ use App\Models\DailyTaskLog;
 use App\Models\ReferralLink;
 use App\Models\ReferralSetting;
 use App\Models\User;
+use App\Models\Wallet;
 use App\Services\DataEncryptionService;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Auth;
@@ -45,6 +46,11 @@ class AuthenticationController extends Controller
             ]);
             $user->update([
                 'ref_code' => $jwt->encrypt(strtoupper(Str::random(8).$user->id)), // Own referral code
+            ]);
+
+            Wallet::create([
+                'user_id' => $user->id,
+                'balance' => 0
             ]);
 
             // check ref and xp add and check

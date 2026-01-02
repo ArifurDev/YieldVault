@@ -45,6 +45,9 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
 
         Route::put('/notification', 'notificationSwitch'); // notification toggle button
         Route::put('update-password', 'updatePassword');
+
+        // delete
+        Route::delete('/delete-account', 'deleteAccount');
     });
 
     /**
