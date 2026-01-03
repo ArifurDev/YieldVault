@@ -25,6 +25,7 @@ class getInvestmentResource extends JsonResource
 
         return [
             'id'           => $this->id,
+            'level_name'   => $this->package?->level?->slug,
             'package_name' => $this->package?->name,
             'amount'       => (float) $this->amount,
             'roi_percent'  => (float) $this->package?->roi_per_day,

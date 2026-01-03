@@ -104,7 +104,7 @@ class InvestmentController extends Controller
             $page      = $validated['page'] ?? 1;
             $perPage   = $validated['per_page'] ?? 10;
 
-            $investments = UserInvestment::with('package')
+            $investments = UserInvestment::with('package','package.level')
                 ->where('user_id', auth()->id())
                 ->latest()->paginate($perPage);
 
