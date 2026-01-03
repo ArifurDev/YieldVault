@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\Manager;
+namespace App\Http\Controllers\API\V1\Manager;
 
 use App\Enum\Wallet\TransactionSource;
 use App\Enum\Wallet\TransactionStatus;
@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Log;
 class WithdrawalRequestController extends Controller
 {
     use ApiResponse;
-    
+
     /**
      * list of withdrawal request
      */
