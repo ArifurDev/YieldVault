@@ -136,6 +136,7 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
 
 
     Route::prefix('v1/manager')->group(function () {
+
         Route::prefix('deposit-requests')->controller(DepositRequestController::class)->group(function () {
             Route::get('/', 'index');
             Route::get('/{id}', 'show');
@@ -150,6 +151,7 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
             Route::post('/{id}/reject', 'reject');
             Route::post('/{id}/mark-as-paid', 'markAsPaid');
         });
+        
     });
 
 

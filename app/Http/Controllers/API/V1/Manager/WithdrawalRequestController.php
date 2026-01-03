@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Log;
 class WithdrawalRequestController extends Controller
 {
     use ApiResponse;
+    
     /**
      * list of withdrawal request
      */
