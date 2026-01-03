@@ -147,7 +147,7 @@ class LevelController extends Controller
                     'current_level'     => $currentLevel ? [
                         'id'        => $currentLevel->id,
                         'name'      => $currentLevel->name,
-                        'daily_roi' => $currentLevel->daily_roi,
+                        'daily_roi' => round($currentLevel->daily_roi, 2),
                         'icon'      => asset($currentLevel->icon),
                     ] : null,
 
