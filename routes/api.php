@@ -10,14 +10,14 @@ use App\Http\Controllers\API\V1\FirebaseTokenController;
 use App\Http\Controllers\API\V1\InvestmentController;
 use App\Http\Controllers\API\V1\KycController;
 use App\Http\Controllers\API\V1\LevelController;
-use App\Http\Controllers\Api\V1\Manager\DepositRequestController;
-use App\Http\Controllers\Api\V1\Manager\WithdrawalRequestController;
 use App\Http\Controllers\API\V1\NotificationController;
 use App\Http\Controllers\API\V1\PackageController;
 use App\Http\Controllers\API\V1\ReferralController;
 use App\Http\Controllers\API\V1\Auth\User\ReferralController as AuthUserReferralController;
 use App\Http\Controllers\API\V1\WalletController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\Manager\DepositRequestController;
+use App\Http\Controllers\Api\V1\Manager\WithdrawalRequestController;
 
 //! Route for user
 Route::prefix('v1')->controller(AuthenticationController::class)->group(function () {
@@ -151,7 +151,7 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
             Route::post('/{id}/reject', 'reject');
             Route::post('/{id}/mark-as-paid', 'markAsPaid');
         });
-        
+
     });
 
 
