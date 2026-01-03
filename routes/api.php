@@ -12,6 +12,7 @@ use App\Http\Controllers\API\V1\KycController;
 use App\Http\Controllers\API\V1\LevelController;
 use App\Http\Controllers\Api\V1\Manager\DepositRequestController;
 use App\Http\Controllers\Api\V1\Manager\WithdrawalRequestController;
+use App\Http\Controllers\API\V1\NotificationController;
 use App\Http\Controllers\API\V1\PackageController;
 use App\Http\Controllers\API\V1\ReferralController;
 use App\Http\Controllers\API\V1\Auth\User\ReferralController as AuthUserReferralController;
@@ -105,12 +106,20 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
     });
 
     /**
+     * Notification - user, manage
+     */
+    Route::prefix('v1/notifications')->controller(NotificationController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::patch('/read/{id?}',  'readNotifications');
+    });
+    /**
      * investment
      */
     Route::prefix('v1/investment')->controller(InvestmentController::class)->group(function () {
         Route::post('/invest',  'investNow');
         Route::get('/my',  'myInvestments');
-        Route::get('/logs/{investment}',  'logs');
+        Route::get('/summary', 'investmentSummary');
+
     });
 
 

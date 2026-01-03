@@ -10,11 +10,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Investment\getInvestmentRequest;
 use App\Http\Requests\Api\V1\Investment\InvestNowRequest;
 use App\Http\Resources\Api\V1\Investment\getInvestmentResource;
+use App\Models\InvestmentLog;
 use App\Models\Package;
 use App\Models\User;
 use App\Models\UserInvestment;
 use App\Models\WalletTransaction;
 use App\Traits\ApiResponse;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -41,6 +43,16 @@ class InvestmentController extends Controller
             }
 
             DB::transaction(function () use ($user, $admin, $package) {
+                // Ensure wallets exist
+                $userWallet = $user->wallet()->firstOrCreate(
+                    ['user_id' => $user->id],
+                    ['balance' => 0]
+                );
+
+                $adminWallet = $admin->wallet()->firstOrCreate(
+                    ['user_id' => $admin->id],
+                    ['balance' => 0]
+                );
 
                 // user → admin wallet
                 $user->wallet->decrement('balance', $package->price);
@@ -103,6 +115,71 @@ class InvestmentController extends Controller
                 'exception' => $e->getMessage()
             ]);
             return $this->sendError('Failed to list investments.', [], 500);
+        }
+    }
+
+    /**
+     * investment Summary
+     */
+    public function investmentSummary()
+    {
+        try {
+            $userId = auth()->id();
+
+            if (auth()->user()->role->valu !== 'user')
+            {
+                return $this->sendError('You do not have permission to view investment summary',[],403);
+            }
+
+            //Total Invested
+            $totalInvested = UserInvestment::where('user_id', $userId)
+                ->sum('amount');
+
+            // Average ROI (only ACTIVE investments)
+            $averageRoi = UserInvestment::where('user_id', $userId)
+                ->where('status', Status::ACTIVE->value)
+                ->avg('roi_percent');
+
+            // Today's Profit (from investment_logs)
+            $todayProfit = InvestmentLog::whereHas('investment', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
+                ->whereDate('date', today())
+                ->sum('profit');
+
+            // Next Return (next active investment)
+            $nextInvestment = UserInvestment::where('user_id', $userId)
+                ->where('status', Status::ACTIVE->value)
+                ->orderBy('end_date')
+                ->first();
+
+            $nextReturn = null;
+
+            if ($nextInvestment) {
+                $dailyProfit = ($nextInvestment->amount * $nextInvestment->roi_percent) / 100;
+
+                $nextReturn = [
+                    'date'   => Carbon::tomorrow()->toDateString(),
+                    'amount' => round($dailyProfit, 2),
+                ];
+            }
+
+            $data = [
+                'total_invested' => round($totalInvested, 2),
+                'average_roi'    => round($averageRoi ?? 0, 2),
+                'today_profit'   => round($todayProfit, 2),
+                'next_return'    => $nextReturn,
+            ];
+
+            return $this->sendResponse($data, 'Investment summary retrieved successfully');
+
+        } catch (\Exception $e) {
+            Log::error('Investment summary error', [
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+
+            return $this->sendError(   'Failed to retrieve investment summary', [],500);
         }
     }
 }

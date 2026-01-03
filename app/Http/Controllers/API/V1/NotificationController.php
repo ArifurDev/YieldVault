@@ -1,0 +1,93 @@
+<?php
+
+namespace App\Http\Controllers\API\V1;
+
+use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\Notification\RecentNotificationResource;
+use App\Traits\ApiResponse;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class NotificationController extends Controller
+{
+    use ApiResponse;
+
+    /**
+     * list of notifications
+     */
+    public function index()
+    {
+        try {
+            // Get the logged-in user
+            $user = auth()->user();
+
+            // Get all notifications from the last 7 days
+            $notifications = $user->notifications()
+                ->where('created_at', '>=', Carbon::now()->subDays(7)) // Filters notifications from the last 7 days
+                ->get();
+
+
+            // Optionally, you can order them by created_at to show the most recent notifications first
+            $notifications = $notifications->sortByDesc('created_at');
+
+            // Prepare the response
+            $message = $notifications->isEmpty() ? 'No recent notifications found.' : 'Recent notifications retrieved successfully.';
+            $data = [
+                'has_unread_notifications' => $this->checkHasNewNotification(),
+                'notifications' => RecentNotificationResource::collection($notifications),
+            ];
+
+            return $this->sendResponse($data,$message);
+        } catch (\Throwable $th) {
+            //throw $th;
+            return $this->sendError('Failed to retrieve notifications.', $th->getMessage(), 500);
+        }
+    }
+
+    // check Has New Notification
+    private function checkHasNewNotification(): bool
+    {
+        $user = auth()->user();
+        return $user->notifications()
+            ->where('created_at', '>=', Carbon::now()->subDays(7)) // Filters notifications from the last 7 days
+            ->whereNull('read_at')
+            ->exists();
+    }
+
+
+    /**
+     * Read a single or all notifications based on the presence of an ID
+     */
+    public function readNotifications($id = null)
+    {
+        $user = Auth::user();
+
+        // If an ID is provided, mark the single notification as read
+        if ($id) {
+            // Fetch the notification by ID
+            $notification = $user->unreadNotifications()->find($id);
+
+            if (!$notification) {
+                return $this->sendError('Notification not found or already read.',[], 404);
+            }
+
+            // Mark the notification as read
+            $notification->markAsRead();
+
+            return $this->sendResponse([],'Notification read successfully.');
+        }
+
+        // If no ID is provided, mark all unread notifications as read
+        $unreadNotifications = $user->unreadNotifications;
+
+        if ($unreadNotifications->isEmpty()) {
+            return $this->sendError('Notifications not found.', [],404);
+        }
+
+        // Mark all unread notifications as read
+        $unreadNotifications->markAsRead();
+
+        return $this->sendResponse([], 'Notifications read successfully.');
+    }
+}
