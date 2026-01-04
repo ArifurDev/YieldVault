@@ -77,39 +77,144 @@ class DepositRequestController extends Controller
         }
     }
 
+//    /**
+//     * Manager – Approve Deposit Request
+//     */
+//    public function approve($deposit)
+//    {
+//        try {
+//            // get current user
+//            $user = auth()->user();
+//
+//            $deposit = DepositRequest::with('user')->where('manager_id', $user->id)->find($deposit);
+//
+//            if (!$deposit) {
+//                return $this->sendError("Deposit request not found.",[], 404);
+//            }
+//            if($deposit->manager_id !== $user->id){
+//                return $this->sendError("You don't have permission to access this page.",[], 403);
+//            }
+//            if ($deposit->status !== TransactionStatus::PENDING->value) {
+//                return $this->sendError('Deposit already processed', [], 422);
+//            }
+//
+//            $request_user  = $deposit->user;
+//
+//            DB::transaction(function () use ($deposit, $user, $request_user) {
+//
+//                // Manager → User wallet
+//                $user->wallet->decrement('balance', $deposit->amount);
+//                $request_user->wallet->increment('balance', $deposit->amount);
+//
+//                // Ledger
+//                WalletTransaction::create([
+//                    'from_user_id' => $user->id,
+//                    'to_user_id'   => $request_user->id,
+//                    'amount'       => $deposit->amount,
+//                    'type'         => TransactionType::CREDIT->value,
+//                    'source'       => TransactionSource::DEPOSIT->value,
+//                    'status'       => TransactionStatus::APPROVED->value,
+//                    'reference_id' => $deposit->id,
+//                ]);
+//
+//                // Update status
+//                $deposit->update([
+//                    'status' => TransactionStatus::APPROVED->value,
+//                ]);
+//            });
+//
+//            // Notify user
+//            $user->notify(new UniversalNotification(
+//                'Deposit Approved',
+//                "Your deposit of {$deposit->amount} has been approved.",
+//                'success',
+//                ['deposit_id' => $deposit->id]
+//            ));
+//
+//            return $this->sendResponse([], 'Deposit approved successfully');
+//        } catch (\Exception $e) {
+//            Log::error('Deposit approval failed', [
+//                'deposit_id' => $deposit->id,
+//                'error'      => $e->getMessage(),
+//            ]);
+//
+//            return $this->sendError('Failed to approve deposit', [], 500);
+//        }
+//    }
+
     /**
-     * Manager – Approve Deposit Request
+     * Manager – Approve Deposit Request (LOCK SAFE)
      */
-    public function approve($deposit)
+    public function approve($depositId)
     {
         try {
-            // get current user
-            $user = auth()->user();
+            $manager = auth()->user();
 
-            $deposit = DepositRequest::with('user')->where('manager_id', $user->id)->find($deposit);
+            // Basic validation (no lock yet)
+            $deposit = DepositRequest::with('user')->where('manager_id', $manager->id)->find($depositId);
 
             if (!$deposit) {
-                return $this->sendError("Deposit request not found.",[], 404);
+                return $this->sendError("Deposit request not found.", [], 404);
             }
-            if($deposit->manager_id !== $user->id){
-                return $this->sendError("You don't have permission to access this page.",[], 403);
+
+            if ($deposit->manager_id !== $manager->id) {
+                return $this->sendError("You don't have permission to access this page.", [], 403);
             }
+
             if ($deposit->status !== TransactionStatus::PENDING->value) {
                 return $this->sendError('Deposit already processed', [], 422);
             }
 
-            $request_user  = $deposit->user;
+            // Ensure manager wallet exists
+            $managerWallet = $manager->wallet()->firstOrCreate([
+                'user_id' => $manager->id
+            ]);
 
-            DB::transaction(function () use ($deposit, $user, $request_user) {
+            // Early balance check
+            if ($managerWallet->balance < $deposit->amount) {
+                return $this->sendError(
+                    "Manager does not have sufficient balance to approve this deposit.",
+                    [],
+                    422
+                );
+            }
 
-                // Manager → User wallet
-                $user->wallet->decrement('balance', $deposit->amount);
-                $request_user->wallet->increment('balance', $deposit->amount);
+            /* ================= TRANSACTION WITH LOCK ================= */
+            DB::transaction(function () use ($depositId, $manager) {
+
+                // Lock deposit row
+                $deposit = DepositRequest::where('id', $depositId)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($deposit->status !== TransactionStatus::PENDING->value) {
+                    throw new \Exception('Deposit already processed.');
+                }
+
+                // Lock manager wallet
+                $managerWallet = $manager->wallet()
+                    ->lockForUpdate()
+                    ->firstOrCreate(['user_id' => $manager->id]);
+
+                // Lock user & user wallet
+                $requestUser = $deposit->user()->lockForUpdate()->first();
+                $userWallet  = $requestUser->wallet()
+                    ->lockForUpdate()
+                    ->firstOrCreate(['user_id' => $requestUser->id]);
+
+                // FINAL balance check
+                if ($managerWallet->balance < $deposit->amount) {
+                    throw new \Exception('Manager has insufficient balance.');
+                }
+
+                // Manager → User wallet transfer
+                $managerWallet->decrement('balance', $deposit->amount);
+                $userWallet->increment('balance', $deposit->amount);
 
                 // Ledger
                 WalletTransaction::create([
-                    'from_user_id' => $user->id,
-                    'to_user_id'   => $request_user->id,
+                    'from_user_id' => $manager->id,
+                    'to_user_id'   => $requestUser->id,
                     'amount'       => $deposit->amount,
                     'type'         => TransactionType::CREDIT->value,
                     'source'       => TransactionSource::DEPOSIT->value,
@@ -117,30 +222,35 @@ class DepositRequestController extends Controller
                     'reference_id' => $deposit->id,
                 ]);
 
-                // Update status
+                // Update deposit status
                 $deposit->update([
                     'status' => TransactionStatus::APPROVED->value,
                 ]);
             });
 
             // Notify user
-            $user->notify(new UniversalNotification(
-                'Deposit Approved',
-                "Your deposit of {$deposit->amount} has been approved.",
-                'success',
-                ['deposit_id' => $deposit->id]
-            ));
+            $deposit->user->notify(
+                new UniversalNotification(
+                    'Deposit Approved',
+                    "Your deposit of {$deposit->amount} has been approved.",
+                    'success',
+                    ['deposit_id' => $deposit->id]
+                )
+            );
 
             return $this->sendResponse([], 'Deposit approved successfully');
+
         } catch (\Exception $e) {
+
             Log::error('Deposit approval failed', [
-                'deposit_id' => $deposit->id,
+                'deposit_id' => $depositId,
                 'error'      => $e->getMessage(),
             ]);
 
-            return $this->sendError('Failed to approve deposit', [], 500);
+            return $this->sendError('Failed to approve deposit:'.$e->getMessage(), [], 500);
         }
     }
+
 
 
     /**
