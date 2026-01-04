@@ -107,10 +107,98 @@ class WithdrawalRequestController extends Controller
                 return $this->sendError('Withdrawal already processed.', [], 422);
             }
 
-            $withdrawal->update([
-                'status' => TransactionStatus::APPROVED->value,
-            ]);
+            // OPTIONAL EARLY BALANCE CHECK
+            $user   = $withdrawal->user;
+            $wallet = $user->wallet;
 
+            if (!$wallet || $wallet->balance < $withdrawal->amount) {
+                return $this->sendError("User does not have sufficient balance for this withdrawal.", [], 422);
+            }
+//            DB::transaction(function () use ($withdrawal, $manager) {
+//
+//                $user = $withdrawal->user;
+//
+//                // Ensure wallets exist
+//                $userWallet = $user->wallet()->firstOrCreate(['user_id' => $user->id]);
+//                $managerWallet = $manager->wallet()->firstOrCreate(['user_id' => $manager->id]);
+//
+//                // FINAL BALANCE CHECK
+//                if ($userWallet->balance < $withdrawal->amount) {
+//                    throw new \Exception('Insufficient wallet balance.');
+//                }
+//
+//                // USER wallet DEBIT
+//                $userWallet->decrement('balance', $withdrawal->amount);
+//
+//                // MANAGER wallet CREDIT (cash/bank settlement)
+//                $managerWallet->increment('balance', $withdrawal->amount);
+//
+//                // Ledger entry
+//                WalletTransaction::create([
+//                    'from_user_id' => $user->id,
+//                    'to_user_id'   => $manager->id,
+//                    'amount'       => $withdrawal->amount,
+//                    'type'         => TransactionType::DEBIT->value,
+//                    'source'       => TransactionSource::WITHDRAW->value,
+//                    'status'       => TransactionStatus::APPROVED->value,
+//                    'reference_id' => $withdrawal->id,
+//                ]);
+//
+//                // Update withdrawal status
+//                $withdrawal->update([
+//                    'status' => TransactionStatus::APPROVED->value,
+//                ]);
+//            });
+
+            /* ================= TRANSACTION WITH LOCK ================= */
+            DB::transaction(function () use ($id, $manager) {
+
+                // LOCK withdrawal row
+                $withdrawal = WithdrawRequest::where('id', $id)
+                    ->lockForUpdate()
+                    ->first();
+
+                // Double safety check after lock
+                if ($withdrawal->status !== TransactionStatus::PENDING->value) {
+                    throw new \Exception('Withdrawal already processed.');
+                }
+
+                // LOCK user wallet
+                $user = $withdrawal->user()->lockForUpdate()->first();
+                $userWallet = $user->wallet()->lockForUpdate()
+                    ->firstOrCreate(['user_id' => $user->id]);
+
+                // LOCK manager wallet
+                $managerWallet = $manager->wallet()->lockForUpdate()
+                    ->firstOrCreate(['user_id' => $manager->id]);
+
+                // FINAL BALANCE CHECK
+                if ($userWallet->balance < $withdrawal->amount) {
+                    throw new \Exception('Insufficient wallet balance.');
+                }
+
+                // USER wallet DEBIT
+                $userWallet->decrement('balance', $withdrawal->amount);
+
+                // MANAGER wallet CREDIT
+                $managerWallet->increment('balance', $withdrawal->amount);
+
+                // Ledger entry
+                WalletTransaction::create([
+                    'from_user_id' => $user->id,
+                    'to_user_id'   => $manager->id,
+                    'amount'       => $withdrawal->amount,
+                    'type'         => TransactionType::DEBIT->value,
+                    'source'       => TransactionSource::WITHDRAW->value,
+                    'status'       => TransactionStatus::APPROVED->value,
+                    'reference_id' => $withdrawal->id,
+                ]);
+
+                // Update withdrawal status
+                $withdrawal->update([
+                    'status' => TransactionStatus::APPROVED->value,
+                ]);
+            });
             // Notify user
             $withdrawal->user->notify(
                 new UniversalNotification(
@@ -186,14 +274,98 @@ class WithdrawalRequestController extends Controller
     }
 
 
+//    /**
+//     * Manager – Mark Withdrawal as Paid
+//     */
+//    public function markAsPaid($id)
+//    {
+//        try {
+//            $manager = auth()->user();
+//
+//            $withdrawal = WithdrawRequest::with('user')
+//                ->where('manager_id', $manager->id)
+//                ->find($id);
+//
+//            if (!$withdrawal) {
+//                return $this->sendError('Withdrawal request not found.', [], 404);
+//            }
+//            if($withdrawal->manager_id !== $manager->id){
+//                return $this->sendError("You don't have permission to access this page.",[], 403);
+//            }
+//
+//            if ($withdrawal->status !== TransactionStatus::APPROVED->value) {
+//                return $this->sendError('Withdrawal not approved yet.', [], 422);
+//            }
+//
+//            DB::transaction(function () use ($withdrawal, $manager) {
+//
+//                $user = $withdrawal->user;
+//
+//                // Ensure wallets exist
+//                $userWallet = $user->wallet()->firstOrCreate(['user_id' => $user->id]);
+//                $managerWallet = $manager->wallet()->firstOrCreate(['user_id' => $manager->id]);
+//
+//                // Check user balance
+//                if ($userWallet->balance < $withdrawal->amount) {
+//                    throw new \Exception('User has insufficient balance.');
+//                }
+//
+//                // USER wallet DEBIT
+//                $userWallet->decrement('balance', $withdrawal->amount);
+//
+//                // MANAGER wallet CREDIT (cash/bank settlement)
+//                $managerWallet->increment('balance', $withdrawal->amount);
+//
+//                // Ledger entry
+//                WalletTransaction::create([
+//                    'from_user_id' => $user->id,
+//                    'to_user_id'   => $manager->id,
+//                    'amount'       => $withdrawal->amount,
+//                    'type'         => TransactionType::DEBIT->value,
+//                    'source'       => TransactionSource::WITHDRAW->value,
+//                    'status'       => TransactionStatus::APPROVED->value,
+//                    'reference_id' => $withdrawal->id,
+//                ]);
+//
+//                // Update withdrawal status
+//                $withdrawal->update([
+//                    'status' => TransactionStatus::PAID->value,
+//                ]);
+//            });
+//
+//            // Notify user
+//            $withdrawal->user->notify(
+//                new UniversalNotification(
+//                    'Withdrawal Paid',
+//                    "Your withdrawal of {$withdrawal->amount} has been successfully paid.",
+//                    'success',
+//                    ['withdrawal_id' => $withdrawal->id]
+//                )
+//            );
+//
+//            return $this->sendResponse([], 'Withdrawal marked as paid');
+//
+//        } catch (\Exception $e) {
+//            Log::error('Withdraw mark as paid failed', [
+//                'withdraw_id' => $id,
+//                'error' => $e->getMessage(),
+//            ]);
+//
+//            return $this->sendError('Failed to mark withdrawal as paid', [], 500);
+//        }
+//    }
+//
+
     /**
      * Manager – Mark Withdrawal as Paid
+     * Mark as Paid = Payment Confirmation
      */
     public function markAsPaid($id)
     {
         try {
             $manager = auth()->user();
 
+            // Basic validation
             $withdrawal = WithdrawRequest::with('user')
                 ->where('manager_id', $manager->id)
                 ->find($id);
@@ -201,48 +373,40 @@ class WithdrawalRequestController extends Controller
             if (!$withdrawal) {
                 return $this->sendError('Withdrawal request not found.', [], 404);
             }
-            if($withdrawal->manager_id !== $manager->id){
-                return $this->sendError("You don't have permission to access this page.",[], 403);
+
+            if ($withdrawal->manager_id !== $manager->id) {
+                return $this->sendError("You don't have permission to access this page.", [], 403);
             }
 
             if ($withdrawal->status !== TransactionStatus::APPROVED->value) {
-                return $this->sendError('Withdrawal not approved yet.', [], 422);
+                return $this->sendError(
+                    'Withdrawal must be approved before marking as paid.',
+                    [],
+                    422
+                );
             }
 
-            DB::transaction(function () use ($withdrawal, $manager) {
+            DB::transaction(function () use ($id) {
 
-                $user = $withdrawal->user;
+                // Lock withdrawal row (prevent double paid)
+                $withdrawal = WithdrawRequest::where('id', $id)
+                    ->lockForUpdate()
+                    ->first();
 
-                // Ensure wallets exist
-                $userWallet = $user->wallet()->firstOrCreate(['user_id' => $user->id]);
-                $managerWallet = $manager->wallet()->firstOrCreate(['user_id' => $manager->id]);
-
-                // Check user balance
-                if ($userWallet->balance < $withdrawal->amount) {
-                    throw new \Exception('User has insufficient balance.');
+                if ($withdrawal->status !== TransactionStatus::APPROVED->value) {
+                    throw new \Exception('Withdrawal already processed.');
                 }
 
-                // USER wallet DEBIT
-                $userWallet->decrement('balance', $withdrawal->amount);
-
-                // MANAGER wallet CREDIT (cash/bank settlement)
-                $managerWallet->increment('balance', $withdrawal->amount);
-
-                // Ledger entry
-                WalletTransaction::create([
-                    'from_user_id' => $user->id,
-                    'to_user_id'   => $manager->id,
-                    'amount'       => $withdrawal->amount,
-                    'type'         => TransactionType::DEBIT->value,
-                    'source'       => TransactionSource::WITHDRAW->value,
-                    'status'       => TransactionStatus::APPROVED->value,
-                    'reference_id' => $withdrawal->id,
-                ]);
-
-                // Update withdrawal status
+                // Only status update
                 $withdrawal->update([
-                    'status' => TransactionStatus::PAID->value,
+                    'status'  => TransactionStatus::PAID->value,
                 ]);
+
+                // Optional: update ledger status
+                WalletTransaction::where('reference_id', $withdrawal->id)
+                    ->update([
+                        'status' => TransactionStatus::PAID->value,
+                    ]);
             });
 
             // Notify user
@@ -255,18 +419,21 @@ class WithdrawalRequestController extends Controller
                 )
             );
 
-            return $this->sendResponse([], 'Withdrawal marked as paid');
+            return $this->sendResponse([], 'Withdrawal marked as paid successfully');
 
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
+
             Log::error('Withdraw mark as paid failed', [
                 'withdraw_id' => $id,
-                'error' => $e->getMessage(),
+                'error'       => $e->getMessage(),
             ]);
 
-            return $this->sendError('Failed to mark withdrawal as paid', [], 500);
+            return $this->sendError(
+                "Failed to mark withdrawal as paid:". $e->getMessage(),
+                [],
+                422
+            );
         }
     }
-
-
-
+    
 }
