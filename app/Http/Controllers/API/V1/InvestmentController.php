@@ -126,7 +126,7 @@ class InvestmentController extends Controller
         try {
             $userId = auth()->id();
 
-            if (auth()->user()->role->valu !== 'user')
+            if (auth()->user()->role->value !== 'user')
             {
                 return $this->sendError('You do not have permission to view investment summary',[],403);
             }
