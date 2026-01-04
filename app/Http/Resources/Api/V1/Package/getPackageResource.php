@@ -67,7 +67,7 @@ class getPackageResource extends JsonResource
             'investment'    => number_format($this->price, 2),
             'duration_days' => (int) $this->duration_days,
 
-            // ROI (formatted like wallet APIs)
+            // ROI (ALWAYS 2 decimal places)
             'roi_per_day' => number_format($this->level->daily_roi, 2),
             'roi_text'    => '$' . number_format(
                     ($this->price * $this->level->daily_roi) / 100,
@@ -96,6 +96,6 @@ class getPackageResource extends JsonResource
                 ? null
                 : "Unlock at {$this->level->name}",
         ];
-
+        
     }
 }
