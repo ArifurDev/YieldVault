@@ -76,7 +76,7 @@ class InvestmentController extends Controller
                     'to_user_id'   => $admin->id,
                     'amount'       => $package->price,
                     'type'         => TransactionType::DEBIT->value,
-                    'source'       => TransactionSource::INVESTMENT->value,
+                    'source'       => TransactionSource::INVESTMENT_BUY->value,
                     'status'       => TransactionStatus::APPROVED->value,
                     'reference_id' => $investment->id,
                 ]);

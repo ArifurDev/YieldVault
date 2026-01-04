@@ -77,7 +77,17 @@ class WalletController extends Controller
             $wallet = $user->wallet;
             $manager = $user->manager;
             $pending_withdraw = $user?->withdrawRequests->where('status',TransactionStatus::PENDING->value)->sum('amount');
-            $total_earn = WalletTransaction::where('type',TransactionType::CREDIT->value)->where('status',TransactionStatus::APPROVED->value)->sum('amount');
+//            $total_earn = WalletTransaction::where('to_user_id',$user->id)->where('type',TransactionType::CREDIT->value)->where('status',TransactionStatus::APPROVED->value)->sum('amount');
+            $total_earn = WalletTransaction::where('to_user_id', $user->id)
+                ->where('type', TransactionType::CREDIT->value)
+                ->where('status', TransactionStatus::APPROVED->value)
+                ->whereIn('source', [
+                    TransactionSource::INVESTMENT_PROFIT->value,
+                    TransactionSource::REFERRAL_REWARD->value,
+                    TransactionSource::TASK_REWARD->value,
+                ])
+                ->sum('amount');
+
             // custom response
             $data = [
                 'balance' => number_format($wallet?->balance ?? 0, 2),
@@ -101,7 +111,11 @@ class WalletController extends Controller
 
             return $this->sendResponse($data, 'Wallet retrieved successfully');
 
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
+            Log::error("Failed to retrieve wallet filter data:", [
+                'userId' => $user->id,
+                'errorMessage' => $e->getMessage(),
+            ]);
             return $this->sendError( 'Failed to retrieve wallet information.',[], 500);
         }
     }
@@ -155,7 +169,11 @@ class WalletController extends Controller
                 ->paginate($perPage);
 
             return $this->sendResponse(getTransactionResource::collection($transactions),'Wallet transaction history retrieved successfully',200,[],$transactions);
-        }catch (\Throwable $e) {
+        }catch (\Exception $e) {
+            Log::error("Failed to retrieve transactions:", [
+                'userId' => $user->id,
+                'errorMessage' => $e->getMessage(),
+            ]);
             return $this->sendError("Failed to retrieve wallet transactions",[],500);
         }
     }
