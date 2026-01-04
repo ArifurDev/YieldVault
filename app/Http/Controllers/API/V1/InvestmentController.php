@@ -160,14 +160,14 @@ class InvestmentController extends Controller
 
                 $nextReturn = [
                     'date'   => Carbon::tomorrow()->toDateString(),
-                    'amount' => round($dailyProfit, 2),
+                    'amount' => number_format($dailyProfit, 2),
                 ];
             }
 
             $data = [
-                'total_invested' => round($totalInvested, 2),
-                'average_roi'    => round($averageRoi ?? 0, 2),
-                'today_profit'   => round($todayProfit, 2),
+                'total_invested' => number_format($totalInvested, 2),
+                'average_roi'    => number_format($averageRoi ?? 0, 2),
+                'today_profit'   => number_format($todayProfit, 2),
                 'next_return'    => $nextReturn,
             ];
 

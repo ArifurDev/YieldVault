@@ -23,42 +23,6 @@ class getPackageResource extends JsonResource
         $requiredXp = $this?->level?->required_xp ?? 0;
         $isUnlocked = $userXp >= $requiredXp;
 
-//        return [
-//            'id'   => $this->id,
-//            'name' => $this->name,
-//
-//            // Investment info
-//            'investment'    => (float) $this->price,
-//            'duration_days' => (int) $this->duration_days,
-//
-//            // ROI
-//            'roi_per_day' => (float) $this->level->daily_roi,
-//            'roi_text'    => '$' . number_format(
-//                    ($this->price * $this->level->daily_roi) / 100,
-//                    2
-//                ),
-//
-//            // LOCK / UNLOCK STATUS
-//            'is_unlocked' => $isUnlocked,
-//            'status' => $isUnlocked ? 'unlocked' : 'locked',
-//
-//            // CTA helper
-//            'cta' => $isUnlocked ? 'invest_now' : 'level_up',
-//
-//            // Level info
-//            'level' => [
-//                'id' => $this->level->id,
-//                'name' => $this->level->name,
-//                'slug' => $this->level->slug ? ucfirst(Str::before($this->level->slug, '-')) : null,
-//                'required_xp' => (int) $requiredXp,
-//            ],
-//
-//            // Lock reason (for UI)
-//            'lock_reason' => $isUnlocked
-//                ? null
-//                : "Unlock at {$this->level->name}",
-//        ];
-
         return [
             'id'   => $this->id,
             'name' => $this->name,
@@ -96,6 +60,6 @@ class getPackageResource extends JsonResource
                 ? null
                 : "Unlock at {$this->level->name}",
         ];
-        
+
     }
 }
