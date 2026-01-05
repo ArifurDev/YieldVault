@@ -10,6 +10,7 @@ use App\Http\Controllers\API\V1\FirebaseTokenController;
 use App\Http\Controllers\API\V1\InvestmentController;
 use App\Http\Controllers\API\V1\KycController;
 use App\Http\Controllers\API\V1\LevelController;
+use App\Http\Controllers\API\V1\Manager\WalletAccountController;
 use App\Http\Controllers\API\V1\NotificationController;
 use App\Http\Controllers\API\V1\PackageController;
 use App\Http\Controllers\API\V1\ReferralController;
@@ -150,6 +151,15 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
             Route::post('/{id}/approve', 'approve');
             Route::post('/{id}/reject', 'reject');
             Route::post('/{id}/mark-as-paid', 'markAsPaid');
+        });
+
+
+        Route::prefix('wallet-accounts')->controller(WalletAccountController::class)->group(function () {
+            Route::get('/',  'index');
+            Route::post('/',  'store');
+            Route::put('/{walletAccount}', 'update');
+            Route::patch('/{walletAccount}/toggle',  'toggleStatus');
+            Route::delete('/{walletAccount}','destroy');
         });
 
     });

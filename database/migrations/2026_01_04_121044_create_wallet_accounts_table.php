@@ -17,18 +17,10 @@ return new class extends Migration
             ->constrained('users')
                 ->cascadeOnDelete();
 
-            $table->string('type');
-            // bank | mobile
-
-            $table->string('label');
-            // City Bank, bKash Personal, Binance BTC
-
-            $table->string('account_number');
-            // bank acc / mobile number / wallet address
-
-            $table->string('network')->nullable();
-            // BTC / TRC20 / ERC20
-
+            $table->string('type'); // bank | mobile
+            $table->string('label');  // City Bank, bKash Personal, Binance BTC
+            $table->string('account_number');// bank acc / mobile number / wallet address
+            $table->string('network')->nullable(); // BTC / TRC20 / ERC20
             $table->boolean('is_active')->default(true);
 
             $table->timestamps();
