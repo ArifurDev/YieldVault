@@ -10,6 +10,7 @@ use App\Http\Controllers\API\V1\FirebaseTokenController;
 use App\Http\Controllers\API\V1\InvestmentController;
 use App\Http\Controllers\API\V1\KycController;
 use App\Http\Controllers\API\V1\LevelController;
+use App\Http\Controllers\API\V1\Manager\DashboardController;
 use App\Http\Controllers\API\V1\Manager\WalletAccountController;
 use App\Http\Controllers\API\V1\NotificationController;
 use App\Http\Controllers\API\V1\PackageController;
@@ -160,6 +161,10 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
             Route::put('/{walletAccount}', 'update');
             Route::patch('/{walletAccount}/toggle',  'toggleStatus');
             Route::delete('/{walletAccount}','destroy');
+        });
+
+        Route::prefix('dashboard')->controller(DashboardController::class)->group(function () {
+            Route::get('/quick-stats',  'summary');
         });
 
     });
