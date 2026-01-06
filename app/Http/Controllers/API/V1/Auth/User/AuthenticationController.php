@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\API\V1\Auth\User;
 
+use App\Enum\ActivityLog\Action;
+use App\Enum\ActivityLog\Level;
+use App\Enum\ActivityLog\Type;
 use App\Enum\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Requests\Api\V1\Auth\SignupRequest;
 use App\Http\Resources\Api\V1\Auth\UserResource;
+use App\Models\ActiveLog;
 use App\Models\DailyTask;
 use App\Models\DailyTaskLog;
 use App\Models\ReferralLink;
@@ -57,6 +61,15 @@ class AuthenticationController extends Controller
             $this->checkRef($validated,$request,$user);
 
             $token = auth('api')->login($user);
+            //  ACTIVITY LOG (REGISTER)
+            ActiveLog::create([
+                'actor_id'       => $user->id,
+                'target_user_id' => $user->id,
+                'type'           => Type::REGISTER,
+                'action'         => Action::REGISTERED,
+                'message'        => "User {$user->first_name} registered successfully",
+                'level'          => Level::SUCCESS,
+            ]);
             DB::commit();
             // success response
             return $this->sendResponse(new UserResource($user),'User registration successful.',200,$token);
@@ -80,6 +93,16 @@ class AuthenticationController extends Controller
             }
 
             $user = Auth::user();
+
+            //  ACTIVITY LOG (LOGIN)
+            ActiveLog::create([
+                'actor_id'       => $user->id,
+                'target_user_id' => $user->id,
+                'type'           => Type::LOGIN,
+                'action'         => Action::LOGIN,
+                'message'        => "User {$user->first_name} logged in",
+                'level'          => Level::INFO,
+            ]);
 
             return $this->sendResponse(new UserResource($user), 'User logged in successfully.', 200, $token);
         }catch (\Exception $exception){

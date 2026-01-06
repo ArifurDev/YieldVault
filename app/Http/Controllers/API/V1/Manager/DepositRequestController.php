@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\API\V1\Manager;
 
+use App\Enum\ActivityLog\Action;
+use App\Enum\ActivityLog\Level;
+use App\Enum\ActivityLog\Type;
 use App\Enum\Wallet\TransactionSource;
 use App\Enum\Wallet\TransactionStatus;
 use App\Enum\Wallet\TransactionType;
@@ -10,6 +13,7 @@ use App\Http\Requests\Api\V1\Manager\Deposit\getDepositRequest;
 use App\Http\Requests\Api\V1\Manager\Deposit\RejectRequest;
 use App\Http\Resources\Api\V1\Manager\Deposit\DepositRequestDetailsResource;
 use App\Http\Resources\Api\V1\Manager\Deposit\getDepositRequestResource;
+use App\Models\ActiveLog;
 use App\Models\DepositRequest;
 use App\Models\WalletTransaction;
 use App\Notifications\UniversalNotification;
@@ -226,6 +230,19 @@ class DepositRequestController extends Controller
                 $deposit->update([
                     'status' => TransactionStatus::APPROVED->value,
                 ]);
+
+                // Log activity
+                ActiveLog::create([
+                    'actor_id'       => $manager->id,
+                    'target_user_id' => $requestUser->id,
+                    'type'           => Type::DEPOSIT,
+                    'action'         => Action::APPROVED,
+                    'amount'         => $deposit->amount,
+                    'reference_type' => DepositRequest::class,
+                    'reference_id'   => $deposit->id,
+                    'message'        => "Approved {$requestUser->first_name}'s deposit ({$deposit->amount})",
+                    'level'          => Level::SUCCESS,
+                ]);
             });
 
             // Notify user
@@ -284,6 +301,18 @@ class DepositRequestController extends Controller
             $deposit->update([
                 'status'  => TransactionStatus::REJECTED->value,
                 'reject_reason' => $validated['reason'],
+            ]);
+
+            ActiveLog::create([
+                'actor_id'       => $user->id,
+                'target_user_id' => $deposit->user_id,
+                'type'           => Type::DEPOSIT,
+                'action'         => Action::REJECTED,
+                'amount'         => $deposit->amount,
+                'reference_type' => DepositRequest::class,
+                'reference_id'   => $deposit->id,
+                'message'        => "Rejected {$deposit->user->first_name}'s deposit ({$deposit->amount})",
+                'level'          => Level::DANGER,
             ]);
 
             // Notify request user

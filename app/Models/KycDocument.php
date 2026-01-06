@@ -13,6 +13,8 @@ class KycDocument extends Model
         'file_side_2_path',
         'status',
         'rejection_reason',
+        'reviewed_by',
+        'reviewed_at'
     ];
 
     protected $casts = [
@@ -21,6 +23,8 @@ class KycDocument extends Model
         'file_side_1_path' => 'string',
         'file_side_2_path' => 'string',
         'rejection_reason' => 'string',
+        'reviewed_by'      => 'integer',
+        'reviewed_at'      => 'datetime'
     ];
 
     /**

@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\API\V1\Manager;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Manager\ActivityLogRequest;
+use App\Http\Resources\Api\V1\Manager\ActivityLogResource;
+use App\Models\ActiveLog;
 use App\Models\DepositRequest;
 use App\Models\KycDocument;
 use App\Models\User;
@@ -79,5 +82,26 @@ class DashboardController extends Controller
 
             return $this->sendError('Failed to retrieve dashboard summary',  [], 500);
         }
+    }
+
+
+    /**
+     * Activity Logs
+     */
+    public function ActivityLogs(ActivityLogRequest $request)
+    {
+        $validated = $request->validated();
+        $page    = $validated['page'] ?? 1;
+        $perPage = $validated['per_page'] ?? 10;
+
+        $sortBy = 'created_at';
+        $order  = $validated['order']   ?? 'desc';
+
+        $query = ActiveLog::where('actor_id',auth()->user()->id)
+            ->orderBy($sortBy, $order);
+
+        $logs = $query->paginate($perPage, ['*'], 'page', $page);
+
+        return $this->sendResponse(  ActivityLogResource::collection($logs),'Activity logs retrieved successfully.', 200,[],$logs);
     }
 }

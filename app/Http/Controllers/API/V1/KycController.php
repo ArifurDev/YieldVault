@@ -10,6 +10,7 @@ use App\Http\Requests\Api\V1\Kyc\submissionRequest;
 use App\Http\Requests\Api\V1\Kyc\UpdateDocumentRequest;
 use App\Http\Resources\Api\V1\Kyc\getDataResource;
 use App\Http\Resources\Api\V1\Kyc\showDataResource;
+use App\Models\ActiveLog;
 use App\Models\KycDocument;
 use App\Models\User;
 use App\Notifications\UniversalNotification;
@@ -292,24 +293,61 @@ class KycController extends Controller
             if (empty($document)) {
                 return $this->sendError('Document not found.', [], 404);
             }
-            $document->status = $validated['status'];
-            $document->rejection_reason = $validated['status'] == "rejected" ? $validated['reason'] : null;
-            $document->save();
+
             // message
             $message = match ($validated['status']) {
                 'approved' => 'KYC document approved successfully.',
                 'rejected' => 'KYC document rejected successfully.',
                 default => 'KYC document updated successfully.',
             };
-            // notify user
-            $document->user->notify(new UniversalNotification(
-                'KYC ' . ucfirst($validated['status']),
-                $validated['status'] === 'approved'
-                    ? 'Your KYC verification has been approved successfully.'
-                    : 'Your KYC has been rejected. Please review the reason and resubmit.',
-                'kyc_' . strtolower($validated['status']),
-                ['reason' => $document->rejection_reason]
-            ));
+
+            DB::transaction(function () use ($validated, $documentId, $user, &$document) {
+                // Lock row to prevent double review
+                $document = KycDocument::with('user')
+                    ->where('id', $documentId)
+                    ->lockForUpdate()
+                    ->first();
+
+                // FINAL SAFETY CHECK (CORRECT)
+                if ($document->reviewed_by !== null) {
+                    throw new \Exception('This KYC document has already been reviewed.');
+                }
+
+                // Update document
+                $document->update([
+                    'status'           => $validated['status'], // Approved / Rejected
+                    'rejection_reason' => $validated['status'] === 'rejected'
+                        ? $validated['reason']
+                        : null,
+                    'reviewed_by'      => $user->id,
+                    'reviewed_at'      => now(),
+                ]);
+
+                // notify user
+                $document->user->notify(new UniversalNotification(
+                    'KYC ' . ucfirst($validated['status']),
+                    $validated['status'] === 'approved'
+                        ? 'Your KYC verification has been approved successfully.'
+                        : 'Your KYC has been rejected. Please review the reason and resubmit.',
+                    'kyc_' . strtolower($validated['status']),
+                    ['reason' => $document->rejection_reason]
+                ));
+            });
+
+            // ACTIVITY LOG
+            ActiveLog::create([
+                'actor_id'       => $user->id,
+                'target_user_id' => $document->user_id,
+                'type'           => \App\Enum\ActivityLog\Type::KYC,
+                'action'         => \App\Enum\ActivityLog\Action::from($validated['status']),
+                'reference_type' => KycDocument::class,
+                'reference_id'   => $document->id,
+                'message'        => ucfirst($validated['status']) . " KYC of {$document->user->first_name}",
+                'level'          => $validated['status'] === 'approved'
+                    ? \App\Enum\ActivityLog\Level::SUCCESS->value
+                    : \App\Enum\ActivityLog\Level::DANGER->value,
+            ]);
+
 
             return $this->sendResponse([], $message);
         } catch (\Exception $e) {
