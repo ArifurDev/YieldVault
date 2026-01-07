@@ -146,17 +146,16 @@ class WalletAccountController extends Controller
             ) {
                 return $this->sendError("You don't have permission", [], 403);
             }
-
+            
             DB::transaction(function () use ($walletAccount) {
 
-                // if activating → deactivate others of same user + same type
-                if (!$walletAccount->is_active) {
+                // if activating → deactivate ALL others of this user
+                if ($walletAccount->is_active === false) {
                     WalletAccount::where('user_id', $walletAccount->user_id)
-                        ->where('type', $walletAccount->type)
-                        ->where('id', '!=', $walletAccount->id)
                         ->update(['is_active' => false]);
                 }
 
+                // toggle current one
                 $walletAccount->update([
                     'is_active' => !$walletAccount->is_active,
                 ]);
