@@ -211,10 +211,8 @@
 
                 // Handle role change
                 function handleRoleChange(role) {
-
                     // Hide everything first
                     $('#assign_manager_wrapper').addClass('d-none');
-                    $('#manager_account_wrapper').addClass('d-none');
 
                     // Clear values
                     $('#manager_select').prop('selectedIndex', 0);
@@ -223,10 +221,6 @@
                     if (role === 'user') {
                         $('#assign_manager_wrapper').removeClass('d-none');
                         loadManagers();
-                    }
-
-                    if (role === 'manager') {
-                        $('#manager_account_wrapper').removeClass('d-none');
                     }
                 }
 
@@ -269,7 +263,6 @@
 
                     // hide all
                     $('#edit_assign_manager_wrapper').addClass('d-none');
-                    $('#edit_manager_account_wrapper').addClass('d-none');
 
                     // clear values
                     $('#edit_manager_select').prop('selectedIndex', 0);
@@ -280,10 +273,6 @@
                         loadManagersForEdit(user?.manager_id);
                     }
 
-                    if (role === 'manager') {
-                        $('#edit_manager_account_wrapper').removeClass('d-none');
-                        $('#edit_manager_account').val(user?.account_number ?? '');
-                    }
                 }
 
 
@@ -369,8 +358,6 @@
                     $('#edit_passwordInput').val('');
                     $('#edit_role').val('');
                 });
-
-
 
 
 

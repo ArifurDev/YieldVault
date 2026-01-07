@@ -74,8 +74,17 @@ class WalletController extends Controller
         try {
             $user = auth()->user();
 
-            $wallet = $user->wallet;
-            $manager = $user->manager;
+            // Eager load relations
+            $user->load([
+                'wallet',
+                'manager.walletAccounts' => fn ($q) => $q->where('is_active', true)
+            ]);
+
+            $wallet = $user?->wallet;
+            $manager = $user?->manager;
+            // Active manager wallet account (if any)
+            $walletAccount = $manager?->walletAccounts->first();
+
             $pending_withdraw = $user?->withdrawRequests->where('status',TransactionStatus::PENDING->value)->sum('amount');
 //            $total_earn = WalletTransaction::where('to_user_id',$user->id)->where('type',TransactionType::CREDIT->value)->where('status',TransactionStatus::APPROVED->value)->sum('amount');
             $total_earn = WalletTransaction::where('to_user_id', $user->id)
@@ -100,12 +109,18 @@ class WalletController extends Controller
                     'id' => $manager->id,
                     'first_name' => $manager->first_name,
                     'last_name' => $manager->last_name,
-
-                    // correct column name
-                    'account_number' => $manager->account_number,
-
                     // generate manager assigned id (MNG-101)
                     'manager_assign_id' => 'MNG-' . str_pad($manager->id, 3, '0', STR_PAD_LEFT),
+                    'wallet_account' => $walletAccount ? [
+                        'id'             => $walletAccount->id, // What kind of wallet
+                        'method'         => $walletAccount->type,// bank | bkash | nagad | rocket
+                        'label'          => $walletAccount->label ?? ($walletAccount->bank_name ?? 'Wallet Account'), // Human readable label
+
+                        'account_number' => $walletAccount->account_number,// Common identifier (bank / mobile)
+                        'provider'       => $walletAccount->network,// Only for mobile wallets (bkash/nagad), null for bank
+                    ] : null,
+
+
                 ] : null,
             ];
 
@@ -194,6 +209,22 @@ class WalletController extends Controller
                 return $this->sendError('Manager not assigned', [], 422);
             }
 
+            // Get manager
+            $manager = User::find($user->manager_id);
+
+            if (!$manager) {
+                return $this->sendError('Manager not found', [], 404);
+            }
+
+            // Get active manager wallet account
+            $walletAccount = $manager->walletAccounts()
+                ->where('is_active', true)
+                ->first();
+
+            if (!$walletAccount) {
+                return $this->sendError('Manager does not have an active wallet account.', [], 422);
+            }
+
             $imagePaths = null;
             // Update avatar if provided
             if ($request->hasFile('proof')) {
@@ -204,8 +235,18 @@ class WalletController extends Controller
 
             $deposit = \App\Models\DepositRequest::create([
                 'user_id'       => $user->id,
-                'manager_id'    => $user->manager_id,
+                'manager_id'    => $manager?->id,
+                'manager_wallet_account_id' => $walletAccount->id,
+
                 'amount'        => $validated['amount'],
+
+                // Wallet snapshot (history safe)
+                'wallet_method'         => $walletAccount->type,
+                'wallet_label'          => $walletAccount->label
+                    ?? ($walletAccount->bank_name ?? 'Wallet Account'),
+                'wallet_account_number' => $walletAccount->account_number,
+                'wallet_provider'       => $walletAccount->network,
+
                 'proof_path'    => $imagePaths,
                 'status'        => TransactionStatus::PENDING->value,
                 'remarks'       => $validated['remarks'] ?? null,

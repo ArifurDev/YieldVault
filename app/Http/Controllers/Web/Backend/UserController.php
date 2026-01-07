@@ -96,8 +96,8 @@ class UserController extends Controller
            // USER only
            'manager_id' => 'required_if:role,user|nullable|exists:users,id',
 
-           // MANAGER only
-           'manager_account' => 'required_if:role,manager|nullable|string|max:50',
+//           // MANAGER only
+//           'manager_account' => 'required_if:role,manager|nullable|string|max:50',
         ]);
 
         DB::beginTransaction();
@@ -122,10 +122,10 @@ class UserController extends Controller
                     ? $validData['manager_id']
                     : null,
 
-                // store account only if MANAGER
-                'account_number' => $validData['role'] === Role::MANAGER->value
-                    ? $validData['manager_account']
-                    : null,
+//                // store account only if MANAGER
+//                'account_number' => $validData['role'] === Role::MANAGER->value
+//                    ? $validData['manager_account']
+//                    : null,
             ]);
 
             // create wallet
@@ -188,7 +188,7 @@ class UserController extends Controller
                 'avatar_remove' => ['nullable', 'boolean'],
                 //  ROLE BASED
                 'manager_id'      => ['required_if:role,user', 'nullable', 'exists:users,id'],
-                'manager_account' => ['required_if:role,manager', 'nullable', 'string', 'max:50'],
+//                'manager_account' => ['required_if:role,manager', 'nullable', 'string', 'max:50'],
             ]);
 
             // Update user fields
@@ -206,7 +206,7 @@ class UserController extends Controller
             // MANAGER → account number
             if ($validated['role'] === Role::MANAGER->value) {
                 $user->manager_id = null; // cleanup
-                $user->account_number = $validated['manager_account'];
+                $user->account_number = null;
             }
 
             // Handle avatar
@@ -287,11 +287,16 @@ class UserController extends Controller
 
     public function managers()
     {
-        $managers = User::where('role', Role::MANAGER->value)
+        $managers = User::with('walletAccounts')
+            ->where('role', Role::MANAGER->value)
+            ->whereHas('walletAccounts', function ($q) {
+                $q->where('is_active', true);
+            })
             ->select('id', 'first_name', 'last_name')
             ->orderBy('first_name')
             ->get();
 
+        Log::info("all managers", ['managers' => $managers]);
         return response()->json([
             'status' => true,
             'data' => $managers

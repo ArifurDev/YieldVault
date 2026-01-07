@@ -165,17 +165,6 @@
                             </select>
                         </div>
 
-                        {{-- Manager Account Number (MANAGER only) --}}
-                        <div class="mb-10 d-none" id="manager_account_wrapper">
-                            <label class="required form-label">Manager Account Number</label>
-                            <input type="text"
-                                   class="form-control form-control-solid"
-                                   name="manager_account"
-                                   placeholder="Enter account number">
-                        </div>
-
-
-
                         <!--begin::Input group-->
                         <div class="input-group mb-5">
                             <input type="password" class="form-control" name="password" id="passwordInput" placeholder="Password" aria-label="Password" aria-describedby="basic-addon2"/>
@@ -309,17 +298,6 @@
                                 <option value="">Select Manager</option>
                             </select>
                         </div>
-
-                        {{-- Manager Account Number (MANAGER only) --}}
-                        <div class="mb-10 d-none" id="edit_manager_account_wrapper">
-                            <label class="required form-label">Manager Account Number</label>
-                            <input type="text"
-                                   class="form-control form-control-solid"
-                                   name="manager_account"
-                                   id="edit_manager_account"
-                                   placeholder="Enter account number">
-                        </div>
-
 
                         <!-- Password -->
                         <div class="input-group mb-5">

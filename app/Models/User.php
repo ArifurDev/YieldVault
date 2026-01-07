@@ -138,4 +138,9 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->belongsTo(User::class, 'manager_id');
     }
+
+    public function walletAccounts()
+    {
+        return $this->hasMany(WalletAccount::class);
+    }
 }

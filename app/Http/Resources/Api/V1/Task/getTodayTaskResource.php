@@ -45,7 +45,7 @@ class getTodayTaskResource extends JsonResource
                 'xp'         => $task->xp,
                 'duration'   => $task->duration,
                 'media_type' => $task->media_type,
-                'media_path' => $task->media_path ? $this->generateMediaUrl($task) : null,
+                'media_path' => $task->media_path ? $this->generateMediaUrl($task,config('app.file_system')) : null,
                 'referral_link' => $task->type->value == "invite" ? $this->generateReferralLink($task->id) : null,
             ] : null,
             'is_complete' => $userCompleted,
