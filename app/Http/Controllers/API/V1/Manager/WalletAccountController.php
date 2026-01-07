@@ -134,20 +134,26 @@ class WalletAccountController extends Controller
         try {
             $user = auth()->user();
 
-            $walletAccount  = WalletAccount::find($id);
-            if(!$walletAccount){
-                return $this->sendError("Wallet account not found",[],404);
+            $walletAccount = WalletAccount::find($id);
+            if (!$walletAccount) {
+                return $this->sendError("Wallet account not found", [], 404);
             }
 
-            if ($user->role->value !== Role::MANAGER->value && $user->id !== $walletAccount->user_id) {
-                return $this->sendError("You don't have permission to access this page", [], 403);
+            // permission check
+            if (
+                $user->role->value !== Role::MANAGER->value &&
+                $user->id !== $walletAccount->user_id
+            ) {
+                return $this->sendError("You don't have permission", [], 403);
             }
 
-            DB::transaction(function () use ($walletAccount, $user) {
+            DB::transaction(function () use ($walletAccount) {
 
+                // if activating → deactivate others of same user + same type
                 if (!$walletAccount->is_active) {
-                    WalletAccount::where('user_id', $user->id)
+                    WalletAccount::where('user_id', $walletAccount->user_id)
                         ->where('type', $walletAccount->type)
+                        ->where('id', '!=', $walletAccount->id)
                         ->update(['is_active' => false]);
                 }
 
@@ -156,17 +162,23 @@ class WalletAccountController extends Controller
                 ]);
             });
 
+            // refresh model to get updated value
+            $walletAccount->refresh();
+
             return $this->sendResponse([
                 'is_active' => $walletAccount->is_active
             ], 'Wallet account status updated');
-        }catch (\Exception $e){
-            Log::error("Failed to update account",[
-                'userId' => $user->id,
+
+        } catch (\Exception $e) {
+            Log::error("Failed to update account", [
+                'userId'  => auth()->id(),
                 'message' => $e->getMessage(),
             ]);
-            return $this->sendError("Failed to update account",[],500);
+
+            return $this->sendError("Failed to update account", [], 500);
         }
     }
+
 
     /**
      * Delete wallet account
