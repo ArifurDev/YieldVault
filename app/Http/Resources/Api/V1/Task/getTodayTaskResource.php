@@ -45,30 +45,60 @@ class getTodayTaskResource extends JsonResource
                 'xp'         => $task->xp,
                 'duration'   => $task->duration,
                 'media_type' => $task->media_type,
-                'media_path' => $task->media_path ? $this->generateMediaUrl($task,config('app.file_system')) : null,
+                'media_path' => $task->media_path ? $this->generateMediaUrl($task) : null,
                 'referral_link' => $task->type->value == "invite" ? $this->generateReferralLink($task->id) : null,
             ] : null,
             'is_complete' => $userCompleted,
         ];
     }
 
+//    private function generateMediaUrl($task)
+//    {
+//        if (!$task) return null;
+//
+//
+//        $mediaType = $task->media_type?->value;
+//        Log::info("media_type: $mediaType");
+//
+//        if (in_array($mediaType, ['image', 'video'])) {
+//            return helpers::generateTempURL($task->media_path,config('app.file_system'));
+//        }
+//
+//        if ($task->media_type === 'url') {
+//            return $task->media_path;
+//        }
+//
+//        return null;
+//    }
+
     private function generateMediaUrl($task)
     {
-        if (!$task) return null;
-
+        Log::info('Media', [
+        'task' => $task,
+            ]);
+        if (!$task || !$task->media_path) return null;
 
         $mediaType = $task->media_type?->value;
 
-        if (in_array($mediaType, ['image', 'video'])) {
-            return helpers::generateTempURL($task->media_path,config('app.file_system'));
+        // 🎥 VIDEO → STREAM ROUTE
+        if ($mediaType === 'video') {
+            return route('media', ['path' => $task->media_path]);
         }
 
-        if ($task->media_type === 'url') {
+        if (in_array($mediaType, ['image', 'video'])) {
+            return helpers::generateTempURL(
+                $task->media_path,
+                config('app.file_system')
+            );
+        }
+
+        if ($mediaType === 'url') {
             return $task->media_path;
         }
 
         return null;
     }
+
 
     /**
      * Generate or return existing valid referral link
