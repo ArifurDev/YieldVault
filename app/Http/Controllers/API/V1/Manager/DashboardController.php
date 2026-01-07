@@ -4,7 +4,9 @@ namespace App\Http\Controllers\API\V1\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Manager\ActivityLogRequest;
+use App\Http\Requests\Api\V1\Manager\getRecentTransactionRequest;
 use App\Http\Resources\Api\V1\Manager\ActivityLogResource;
+use App\Http\Resources\Api\V1\Manager\RecentTransactionResource;
 use App\Models\ActiveLog;
 use App\Models\DepositRequest;
 use App\Models\KycDocument;
@@ -12,6 +14,7 @@ use App\Models\User;
 use App\Models\WithdrawRequest;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
@@ -90,18 +93,81 @@ class DashboardController extends Controller
      */
     public function ActivityLogs(ActivityLogRequest $request)
     {
-        $validated = $request->validated();
-        $page    = $validated['page'] ?? 1;
-        $perPage = $validated['per_page'] ?? 10;
+        try {
+            $validated = $request->validated();
+            $page    = $validated['page'] ?? 1;
+            $perPage = $validated['per_page'] ?? 10;
 
-        $sortBy = 'created_at';
-        $order  = $validated['order']   ?? 'desc';
+            $sortBy = 'created_at';
+            $order  = $validated['order']   ?? 'desc';
 
-        $query = ActiveLog::where('actor_id',auth()->user()->id)
-            ->orderBy($sortBy, $order);
+            $query = ActiveLog::where('actor_id',auth()->user()->id)
+                ->orderBy($sortBy, $order);
 
-        $logs = $query->paginate($perPage, ['*'], 'page', $page);
+            $logs = $query->paginate($perPage, ['*'], 'page', $page);
 
-        return $this->sendResponse(  ActivityLogResource::collection($logs),'Activity logs retrieved successfully.', 200,[],$logs);
+            return $this->sendResponse(  ActivityLogResource::collection($logs),'Activity logs retrieved successfully.', 200,[],$logs);
+        }catch (\Exception $e) {
+            Log::error('Activity log error', [
+                'manager_id' => auth()->id(),
+                'error' => $e->getMessage(),
+            ]);
+            return $this->sendError('Failed to retrieve Activity log.', [], 500);
+        }
     }
+
+    /**
+     * Recent Transactions
+     */
+    public function getRecentTransactions(getRecentTransactionRequest $request)
+    {
+        try {
+            $validated = $request->validated();
+
+            $page    = $validated['page'] ?? 1;
+            $perPage = $validated['per_page'] ?? 10;
+
+
+            $deposits = DB::table('deposit_requests')
+                ->join('users', 'users.id', '=', 'deposit_requests.user_id')
+                ->select(
+                    'deposit_requests.id as source_id',
+                    'deposit_requests.created_at as date',
+                    DB::raw("CONCAT(users.first_name, ' ', users.last_name) as user"),
+                    DB::raw("'deposit' as type"),
+                    'deposit_requests.amount',
+                    'deposit_requests.status'
+                );
+
+            $withdraws = DB::table('withdraw_requests')
+                ->join('users', 'users.id', '=', 'withdraw_requests.user_id')
+                ->select(
+                    'withdraw_requests.id as source_id',
+                    'withdraw_requests.created_at as date',
+                    DB::raw("CONCAT(users.first_name, ' ', users.last_name) as user"),
+                    DB::raw("'withdraw' as type"),
+                    'withdraw_requests.amount',
+                    'withdraw_requests.status'
+                );
+
+            $union = $deposits->unionAll($withdraws);
+
+            $requests = DB::query()
+                ->fromSub($union, 'requests')
+                ->orderBy('date', 'desc')
+                ->paginate($perPage);
+
+            return $this->sendResponse(
+                RecentTransactionResource::collection($requests),
+                'Recent transactions retrieved successfully.',200,[],$requests
+            );
+        }catch (\Exception $e) {
+            Log::error('Recent transactions error', [
+                'manager_id' => auth()->id(),
+                'error' => $e->getMessage(),
+            ]);
+            return $this->sendError('Failed to retrieve Recent transactions.', [], 500);
+        }
+    }
+
 }

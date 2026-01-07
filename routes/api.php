@@ -166,6 +166,7 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
         Route::prefix('dashboard')->controller(DashboardController::class)->group(function () {
             Route::get('/quick-stats',  'summary');
             Route::get('/activity-logs', 'ActivityLogs');
+            Route::get('/recent-transaction','getRecentTransactions');
         });
 
     });

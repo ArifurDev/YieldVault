@@ -146,7 +146,7 @@ class WalletAccountController extends Controller
             ) {
                 return $this->sendError("You don't have permission", [], 403);
             }
-            
+
             DB::transaction(function () use ($walletAccount) {
 
                 // if activating → deactivate ALL others of this user
