@@ -31,4 +31,5 @@ class InvestmentLog extends Model
     {
         return $this->belongsTo(UserInvestment::class, 'user_investment_id');
     }
+
 }

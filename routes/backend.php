@@ -6,6 +6,7 @@ use App\Http\Controllers\Web\Backend\DashboardController;
 use App\Http\Controllers\Web\Backend\DynamicPageController;
 use App\Http\Controllers\Web\Backend\KycController;
 use App\Http\Controllers\Web\Backend\LevelController;
+use App\Http\Controllers\Web\Backend\PackageController;
 use App\Http\Controllers\Web\Backend\PermissionController;
 use App\Http\Controllers\Web\Backend\ProfileController;
 use App\Http\Controllers\Web\Backend\RoleController;
@@ -119,6 +120,12 @@ Route::prefix('/levels')->controller(LevelController::class)->group(function () 
     Route::get('/', 'index')->name('level.index');
     Route::get('/edit/{id}', 'edit')->name('level.edit');
     Route::put('/update/{id}', 'update')->name('level.update');
+});
+
+Route::prefix('/package')->controller(PackageController::class)->group(function () {
+    Route::get('/', 'index')->name('package.index');
+    Route::get('/edit/{id}', 'edit')->name('package.edit');
+    Route::put('/update/{id}', 'update')->name('package.update');
 });
 
 

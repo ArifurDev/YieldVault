@@ -50,6 +50,11 @@ class UserInvestment extends Model
         return $this->belongsTo(Package::class);
     }
 
+    public function logs()
+    {
+        return $this->hasMany(InvestmentLog::class);
+    }
+
     /**
      * Helper: calculate earned amount
      */

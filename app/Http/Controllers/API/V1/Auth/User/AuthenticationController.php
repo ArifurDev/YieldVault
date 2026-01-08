@@ -6,6 +6,9 @@ use App\Enum\ActivityLog\Action;
 use App\Enum\ActivityLog\Level;
 use App\Enum\ActivityLog\Type;
 use App\Enum\Role;
+use App\Enum\Wallet\TransactionSource;
+use App\Enum\Wallet\TransactionStatus;
+use App\Enum\Wallet\TransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Requests\Api\V1\Auth\SignupRequest;
@@ -17,6 +20,7 @@ use App\Models\ReferralLink;
 use App\Models\ReferralSetting;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\WalletTransaction;
 use App\Services\DataEncryptionService;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Auth;
@@ -162,29 +166,106 @@ class AuthenticationController extends Controller
             return true;
         }
 
+//        /**
+//         * CASE B — Normal Referral (NO daily invite task)
+//         * ----------------------------------------
+//         * Example: Give 10 XP for normal referrals (optional)
+//         */
+//        if ($refToken){
+//            $user = User::where('ref_code', $refToken)->first();
+//            if(!$user){
+//                return true;
+//            }
+//            $settings = ReferralSetting::current();
+//
+//            $normalRewardXp = 10; // change as needed
+//
+//            DailyTaskLog::create([
+//                'user_id'       => $user->id,
+//                'task_id'       => null,
+//                'daily_task_id' => null,
+//                'xp_rewarded'   => $settings ? $settings->referral_xp : $normalRewardXp,
+//            ]);
+//
+//            // seeting ->referral_amount ? .. : 1
+//            WalletTransaction::create([
+//
+//            ]);
+//
+//            return true;
+//        }
+
         /**
          * CASE B — Normal Referral (NO daily invite task)
          * ----------------------------------------
-         * Example: Give 10 XP for normal referrals (optional)
+         * Give XP + Wallet reward for referral
          */
-        if ($refToken){
-            $user = User::where('ref_code', $refToken)->first();
-            if(!$user){
+        if ($refToken) {
+
+            // Referrer (who will get reward)
+            $referrer = User::with('wallet')
+                ->where('ref_code', $refToken)
+                ->first();
+
+            if (!$referrer) {
                 return true;
             }
+
+            // Admin (source of funds)
+            $admin = User::where('role', 'admin')->firstOrFail();
+
+            // Settings
             $settings = ReferralSetting::current();
 
-            $normalRewardXp = 10; // change as needed
+            $rewardXp     = $settings->referral_xp ?? 10;
+            $rewardAmount = $settings->referral_amount ?? 1;
 
-            DailyTaskLog::create([
-                'user_id'       => $user->id,
-                'task_id'       => null,
-                'daily_task_id' => null,
-                'xp_rewarded'   => $settings ? $settings->referral_xp : $normalRewardXp,
-            ]);
+            try {
+
+                DB::transaction(function () use ($referrer, $admin, $rewardXp, $rewardAmount) {
+
+                    /**
+                     *  Ensure referrer wallet exists
+                     */
+                    $wallet = $referrer->wallet()->firstOrCreate([
+                        'user_id' => $referrer->id,
+                    ]);
+
+                    /**
+                     * XP Reward Log
+                     */
+                    DailyTaskLog::create([
+                        'user_id'       => $referrer->id,
+                        'task_id'       => null,
+                        'daily_task_id' => null,
+                        'xp_rewarded'   => $rewardXp,
+                    ]);
+
+                    /**
+                     * CREDIT Wallet Balance
+                     */
+                    $wallet->increment('balance', $rewardAmount);
+
+                    /**
+                     *  Wallet Transaction Log
+                     */
+                    WalletTransaction::create([
+                        'from_user_id' => $admin->id, // admin as fund source
+                        'to_user_id'   => $referrer->id,
+                        'amount'       => $rewardAmount,
+                        'type'         => TransactionType::CREDIT->value,
+                        'source'       => TransactionSource::REFERRAL_REWARD->value,
+                        'status'       => TransactionStatus::APPROVED->value,
+                    ]);
+                });
+
+            } catch (\Throwable $e) {
+                report($e); // log but don't break signup flow
+            }
 
             return true;
         }
+
     }
 
 }

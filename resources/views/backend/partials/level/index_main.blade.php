@@ -21,11 +21,11 @@
                 <div class="d-flex justify-content-end" data-kt-user-table-toolbar="base"
                      data-select2-id="select2-data-195-9exk">
 
-                    <!--begin::Add user-->
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                            data-bs-target="#kt_modal_add_user">
-                        <i class="ki-duotone ki-plus fs-2"></i> Add Level
-                    </button>
+{{--                    <!--begin::Add user-->--}}
+{{--                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"--}}
+{{--                            data-bs-target="#kt_modal_add_user">--}}
+{{--                        <i class="ki-duotone ki-plus fs-2"></i> Add Level--}}
+{{--                    </button>--}}
                     <!--end::Add user-->
                 </div>
                 <!--end::Toolbar-->

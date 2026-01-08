@@ -20,7 +20,19 @@ class LevelController extends Controller
             $data = Level::latest();
 
             return DataTables::of($data)
+                ->filter(function ($query) use ($request) {
+                    if ($request->has('search') && $request->search['value']) {
 
+                        $search = $request->search['value'];
+
+                        $query->where(function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('slug', 'like', "%{$search}%")
+                                ->orWhere('required_xp', 'like', "%{$search}%")
+                                ->orWhere('daily_roi', 'like', "%{$search}%");
+                        });
+                    }
+                })
                 ->addColumn('icon', function ($row) {
                     $icon = $row->icon
                         ? asset($row->icon)

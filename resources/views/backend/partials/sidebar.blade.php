@@ -197,7 +197,7 @@
                 <!--end:Menu link-->
 
                 <!--begin:Menu sub-->
-                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('tasks.*','daily.task.*') ? 'show' : '' }}">
+                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('level.*') ? 'show' : '' }}">
 
                     <!--begin:Page List-->
                     <div class="menu-item mb-1">
@@ -211,17 +211,19 @@
                     </div>
                     <!--end:Page List-->
 
-                    <!--begin:Create Page-->
+                    <!--begin:Page List-->
                     <div class="menu-item mb-1">
-                        <a class="menu-link {{ request()->routeIs('daily.task.*') ? 'active' : '' }}"
-                           href="{{ route('daily.task.index') }}">
+                        <a class="menu-link {{ request()->routeIs('level.index') ? 'active' : '' }}"
+                           href="{{ route('level.index') }}">
                             <span class="menu-bullet">
                                 <span class="bullet bullet-dot"></span>
                             </span>
-                            <span class="menu-title">List of Daily Task</span>
+                            <span class="menu-title">List of Package</span>
                         </a>
                     </div>
-                    <!--end:Create Page-->
+                    <!--end:Page List-->
+
+
 
                 </div>
                 <!--end:Menu sub-->
