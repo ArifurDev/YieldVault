@@ -197,7 +197,7 @@
                 <!--end:Menu link-->
 
                 <!--begin:Menu sub-->
-                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('level.*') ? 'show' : '' }}">
+                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('level.*','package.*') ? 'show' : '' }}">
 
                     <!--begin:Page List-->
                     <div class="menu-item mb-1">
@@ -213,8 +213,8 @@
 
                     <!--begin:Page List-->
                     <div class="menu-item mb-1">
-                        <a class="menu-link {{ request()->routeIs('level.index') ? 'active' : '' }}"
-                           href="{{ route('level.index') }}">
+                        <a class="menu-link {{ request()->routeIs('package.index') ? 'active' : '' }}"
+                           href="{{ route('package.index') }}">
                             <span class="menu-bullet">
                                 <span class="bullet bullet-dot"></span>
                             </span>

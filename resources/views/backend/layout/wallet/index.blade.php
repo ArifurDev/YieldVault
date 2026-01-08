@@ -17,10 +17,10 @@
                     <div class="card-title">
                         <div class="d-flex align-items-center position-relative my-1">
                             <i class="ki-duotone ki-magnifier fs-3 position-absolute ms-5"></i>
-                            <input type="text"
-                                   data-kt-wallet-table-filter="search"
-                                   class="form-control form-control-solid w-250px ps-13"
-                                   placeholder="Search wallet">
+{{--                            <input type="text"--}}
+{{--                                   data-kt-wallet-table-filter="search"--}}
+{{--                                   class="form-control form-control-solid w-250px ps-13"--}}
+{{--                                   placeholder="Search wallet">--}}
                         </div>
                     </div>
                 </div>

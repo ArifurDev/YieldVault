@@ -64,4 +64,44 @@ class PackageController extends Controller
         }
         return view('backend.layout.package.index');
     }
+
+    /**
+     * Edit package (AJAX)
+     */
+    public function edit($id)
+    {
+        $package = Package::findOrFail($id);
+
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'id'            => $package->id,
+                'price'         => $package->price,
+                'duration_days' => $package->duration_days,
+            ]
+        ]);
+    }
+
+    /**
+     * Update package (AJAX)
+     */
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'price'         => 'required|numeric|min:0',
+            'duration_days' => 'required|integer|min:1',
+        ]);
+
+        $package = Package::findOrFail($id);
+
+        $package->update([
+            'price'         => $request->price,
+            'duration_days' => $request->duration_days,
+        ]);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Package updated successfully'
+        ]);
+    }
 }
