@@ -121,7 +121,7 @@ Route::prefix('/levels')->controller(LevelController::class)->group(function () 
     Route::get('/edit/{id}', 'edit')->name('level.edit');
     Route::put('/update/{id}', 'update')->name('level.update');
 });
-
+//! Route for package
 Route::prefix('/package')->controller(PackageController::class)->group(function () {
     Route::get('/', 'index')->name('package.index');
     Route::get('/edit/{id}', 'edit')->name('package.edit');
