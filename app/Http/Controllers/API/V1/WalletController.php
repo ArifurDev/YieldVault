@@ -14,7 +14,11 @@ use App\Http\Requests\Api\V1\Wallet\withdrawRequest;
 use App\Http\Resources\Api\V1\Wallet\DepositRequestResource;
 use App\Http\Resources\Api\V1\Wallet\getTransactionResource;
 use App\Http\Resources\Api\V1\Wallet\WithdrawRequestResource;
+use App\Models\DailyTask;
+use App\Models\DailyTaskLog;
+use App\Models\InvestmentLog;
 use App\Models\User;
+use App\Models\UserInvestment;
 use App\Models\WalletTransaction;
 use App\Notifications\UniversalNotification;
 use App\Traits\ApiResponse;
@@ -26,6 +30,66 @@ use Illuminate\Support\Str;
 class WalletController extends Controller
 {
     use ApiResponse;
+
+    /**
+     * User Dashboard Quick Summary
+     */
+    public function summary()
+    {
+        try {
+            $user = auth()->user();
+            $today = now()->format('Y-m-d');
+
+            // Wallet Balance
+            $walletBalance = number_format($user->wallet?->balance ?? 0, 2);
+
+            // Active Investments
+            $activeInvestments = UserInvestment::where('user_id', auth()->id())
+                ->where('status', 'active')
+                ->whereDate('start_date', '<=', $today)
+                ->whereDate('end_date', '>=', $today)
+                ->count();
+
+            // today total task
+            $totalTasks = DailyTask::where('date', $today)
+                ->where('is_active', 1)
+                ->count();
+
+            $completedTasks = DailyTaskLog::where('user_id', auth()->id())
+                ->whereDate('created_at', today())
+                ->count();
+
+            // Today's ROI Potential
+            $todayEarnedRoi = InvestmentLog::whereHas('investment', function ($q) {
+                $q->where('user_id', auth()->id());
+            })
+                ->whereDate('date', today())
+                ->sum('profit');
+
+
+
+            $data = [
+                'wallet' => [
+                    'balance' => $walletBalance,
+                ],
+                'investments' => [
+                    'active_count' => $activeInvestments,
+                ],
+                'roi' => [
+                    'today_potential' => number_format($todayEarnedRoi, 2),
+                ],
+                'tasks' => [
+                    'completed' => $completedTasks,
+                    'total'     => $totalTasks,
+                ]
+            ];
+
+            return $this->sendResponse($data, 'Dashboard summary retrieved successfully');
+
+        } catch (\Exception $e) {
+            return $this->sendError('Failed to load dashboard summary', [], 500);
+        }
+    }
 
     /**
      * get wallet filter data

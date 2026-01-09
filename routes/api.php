@@ -100,11 +100,16 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
      * wallet management
      */
     Route::prefix('v1/wallet')->controller(WalletController::class)->group(function () {
+        Route::get('/dashboard/summary', 'summary');
         Route::get('/get-filter-data', 'getFilterData');
         Route::get('/', 'getWallet');
         Route::get('/transactions', 'getTransactions');
         Route::post('/deposit-request', 'depositRequest');
         Route::post('/withdraw-request', 'withdrawRequest');
+    });
+
+    Route::prefix('v1/')->controller(WalletController::class)->group(function () {
+        Route::get('dashboard/summary', 'summary');
     });
 
     /**
