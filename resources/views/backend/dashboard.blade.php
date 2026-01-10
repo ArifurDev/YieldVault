@@ -413,6 +413,38 @@
 
                 <!---end:3rd row-->
 
+                <!---start: show modal-->
+                <div class="modal fade" id="transactionModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+
+                            <div class="modal-header">
+                                <h5 class="modal-title">Transaction Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+
+                            <div class="modal-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item"><strong>ID:</strong> <span id="trx_id"></span></li>
+                                    <li class="list-group-item"><strong>From:</strong> <span id="trx_from"></span></li>
+                                    <li class="list-group-item"><strong>To:</strong> <span id="trx_to"></span></li>
+                                    <li class="list-group-item"><strong>Amount:</strong> <span id="trx_amount"></span></li>
+                                    <li class="list-group-item"><strong>Type:</strong> <span id="trx_type"></span></li>
+                                    <li class="list-group-item"><strong>Source:</strong> <span id="trx_source"></span></li>
+                                    <li class="list-group-item"><strong>Status:</strong> <span id="trx_status"></span></li>
+                                    <li class="list-group-item"><strong>Date:</strong> <span id="trx_date"></span></li>
+                                </ul>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <!----end: end modal-->
+
             </div>
             <!--end::Container-->
         </div>
@@ -564,10 +596,9 @@
                             </td>
                             <td>${trx.date}</td>
                             <td class="text-end">
-                                <a href="/admin/transaction/transactions/${trx.id}"
-                                   class="btn btn-sm btn-light">
+                                <button class="btn btn-sm btn-light show-transaction" data-id="${trx.id}">
                                     View
-                                </a>
+                                </button>
                             </td>
                         </tr>
                     `);
@@ -576,6 +607,27 @@
                 }
 
                 loadRecentTransactions();
+            </script>
+            <script>
+                $(document).on('click', '.show-transaction', function () {
+
+                    const id = $(this).data('id');
+
+                    $.get("{{ url('/admin/transaction/transactions') }}/" + id, function (data) {
+
+                        $('#trx_id').text(data.id);
+                        $('#trx_from').text(data.from);
+                        $('#trx_to').text(data.to);
+                        $('#trx_amount').text('$' + data.amount);
+                        $('#trx_type').text(data.type);
+                        $('#trx_source').text(data.source);
+                        $('#trx_status').text(data.status);
+                        $('#trx_date').text(data.date);
+
+                        $('#transactionModal').modal('show');
+                    });
+
+                });
             </script>
     @endpush
 @endsection
