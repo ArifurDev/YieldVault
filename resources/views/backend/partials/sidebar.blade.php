@@ -319,7 +319,7 @@
                 <!--end:Menu link-->
 
                 <!--begin:Menu sub-->
-                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('wallet.*','daily.task.*') ? 'show' : '' }}">
+                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('wallet.*','transaction.*') ? 'show' : '' }}">
 
                     <!--begin:Page List-->
                     <div class="menu-item mb-1">
@@ -335,12 +335,12 @@
 
                     <!--begin:Create Page-->
                     <div class="menu-item mb-1">
-                        <a class="menu-link {{ request()->routeIs('daily.task.*') ? 'active' : '' }}"
-                           href="{{ route('daily.task.index') }}">
+                        <a class="menu-link {{ request()->routeIs('transaction.*') ? 'active' : '' }}"
+                           href="{{ route('transaction.index') }}">
                             <span class="menu-bullet">
                                 <span class="bullet bullet-dot"></span>
                             </span>
-                            <span class="menu-title">List of Daily Task</span>
+                            <span class="menu-title">Transaction</span>
                         </a>
                     </div>
                     <!--end:Create Page-->

@@ -6,18 +6,22 @@ use App\Http\Controllers\Web\Backend\DashboardController;
 use App\Http\Controllers\Web\Backend\DynamicPageController;
 use App\Http\Controllers\Web\Backend\KycController;
 use App\Http\Controllers\Web\Backend\LevelController;
+use App\Http\Controllers\Web\Backend\NotificationController;
 use App\Http\Controllers\Web\Backend\PackageController;
 use App\Http\Controllers\Web\Backend\PermissionController;
 use App\Http\Controllers\Web\Backend\ProfileController;
 use App\Http\Controllers\Web\Backend\RoleController;
 use App\Http\Controllers\Web\Backend\SettingController;
 use App\Http\Controllers\Web\Backend\TaskController;
+use App\Http\Controllers\Web\Backend\TransactionController;
 use App\Http\Controllers\Web\Backend\UserController;
 use App\Http\Controllers\Web\Backend\UserRoleManagementController;
 use App\Http\Controllers\Web\Backend\WalletController;
 
 //! dashboard
 Route::get('/dashboard',[DashboardController::class,'index'])->name('dashboard');
+Route::get('/dashboard/user-growth', [DashboardController::class, 'userGrowth'])->name('dashboard.user-growth');
+Route::get('/dashboard/recent-transactions', [DashboardController::class, 'recentTransactions'])->name('dashboard.recent-transactions');
 //! profile
 Route::controller(ProfileController::class)->group(function () {
     Route::get('/profile',  'index')->name('profile.edit');
@@ -128,6 +132,13 @@ Route::prefix('/package')->controller(PackageController::class)->group(function 
     Route::put('/update/{id}', 'update')->name('package.update');
 });
 
+//! Route for transaction
+Route::prefix('/transaction')->controller(TransactionController::class)->group(function () {
+    Route::get('/', 'index')->name('transaction.index');
+    Route::get('/transactions/{transaction}', 'show')->name('transaction.show');
+    Route::get('/export', 'export')->name('transaction.export');
+});
+
 
 //! Route for Wallet Management
 Route::prefix('/wallets')->controller(WalletController::class)->group(function () {
@@ -135,7 +146,18 @@ Route::prefix('/wallets')->controller(WalletController::class)->group(function (
     Route::get('/wallet/{user}/transactions', 'show')->name('wallet.show');
     Route::put('/update/{id}', 'update')->name('wallet.update');
 
-    Route::post('/wallet/admin/action',  'adminWalletAction')->name('wallet.admin.action');});
+    Route::post('/wallet/admin/action',  'adminWalletAction')->name('wallet.admin.action');
+});
 
 
 Route::get('/admin/managers', [UserController::class, 'managers'])->name('admin.managers');
+//Route::get('/admin/notifications', function () {
+//    return view('backend.notifications.index');
+//})->name('admin.notifications.index');
+
+
+Route::prefix('/notification')->controller(NotificationController::class)->group(function () {
+    Route::get('/', 'index')->name('notification.index');
+    // Read single OR all
+    Route::post('/read/{id?}','readNotifications')->name('notification.read');
+});
