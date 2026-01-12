@@ -66,10 +66,10 @@
                     <div class="card-title">
                         <div class="d-flex align-items-center position-relative my-1">
                             <i class="ki-duotone ki-magnifier fs-3 position-absolute ms-5"></i>
-                            <input type="text"
-                                   data-kt-wallet-transaction-filter="search"
-                                   class="form-control form-control-solid w-300px ps-13"
-                                   placeholder="Search transaction">
+{{--                            <input type="text"--}}
+{{--                                   data-kt-wallet-transaction-filter="search"--}}
+{{--                                   class="form-control form-control-solid w-300px ps-13"--}}
+{{--                                   placeholder="Search transaction">--}}
                         </div>
                     </div>
                 </div>

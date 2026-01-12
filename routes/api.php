@@ -119,6 +119,7 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
         Route::get('/', 'index');
         Route::patch('/read/{id?}',  'readNotifications');
     });
+
     /**
      * investment
      */
@@ -128,7 +129,6 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
         Route::get('/summary', 'investmentSummary');
 
     });
-
 
     // --------------------------------- manager role
 

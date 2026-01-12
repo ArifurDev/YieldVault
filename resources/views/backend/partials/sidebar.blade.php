@@ -29,6 +29,8 @@
             <!--end:Menu item-->
 
 
+
+
             <!--begin:Menu item-->
             <div class="menu-item pt-5">
                 <div class="menu-content">
@@ -240,7 +242,7 @@
 
             <!--begin:Menu item-->
             <div data-kt-menu-trigger="click"
-                 class="menu-item menu-accordion {{ request()->routeIs('dynamic-pages.*') ? 'show' : '' }}">
+                 class="menu-item menu-accordion {{ request()->routeIs('tasks.*','daily.task.*') ? 'show' : '' }}">
 
                 <!--begin:Menu link-->
                 <span class="menu-link">
@@ -259,7 +261,7 @@
                 <!--end:Menu link-->
 
                 <!--begin:Menu sub-->
-                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('tasks.*','daily.task.*') ? 'show' : '' }}">
+                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('tasks.*','daily.task.*','daily.tasks.*') ? 'show' : '' }}">
 
                     <!--begin:Page List-->
                     <div class="menu-item mb-1">
@@ -275,7 +277,7 @@
 
                     <!--begin:Create Page-->
                     <div class="menu-item mb-1">
-                        <a class="menu-link {{ request()->routeIs('daily.task.*') ? 'active' : '' }}"
+                        <a class="menu-link {{ request()->routeIs('daily.task.*','daily.tasks.*') ? 'active' : '' }}"
                            href="{{ route('daily.task.index') }}">
                             <span class="menu-bullet">
                                 <span class="bullet bullet-dot"></span>
@@ -300,7 +302,7 @@
 
             <!--begin:Menu item-->
             <div data-kt-menu-trigger="click"
-                 class="menu-item menu-accordion {{ request()->routeIs('dynamic-pages.*') ? 'show' : '' }}">
+                 class="menu-item menu-accordion {{ request()->routeIs('wallet.*','transaction.*') ? 'show' : '' }}">
 
                 <!--begin:Menu link-->
                 <span class="menu-link">
@@ -349,6 +351,58 @@
                 <!--end:Menu sub-->
             </div>
             <!--end:Menu item-->
+
+{{--            <!--begin:ROI Health-->--}}
+{{--            <div data-kt-menu-trigger="click"--}}
+{{--                 class="menu-item menu-accordion {{ request()->routeIs('roi.dashboard') ? 'show' : '' }}">--}}
+
+{{--                <!--begin:Menu link-->--}}
+{{--                <span class="menu-link">--}}
+{{--                    <span class="menu-icon">--}}
+{{--                        <i class="ki-duotone ki-element-plus fs-2">--}}
+{{--                             <span class="path1"></span>--}}
+{{--                             <span class="path2"></span>--}}
+{{--                             <span class="path3"></span>--}}
+{{--                             <span class="path4"></span>--}}
+{{--                             <span class="path5"></span>--}}
+{{--                        </i>--}}
+{{--                    </span>--}}
+{{--                    <span class="menu-title">ROI Health Management</span>--}}
+{{--                    <span class="menu-arrow"></span>--}}
+{{--                </span>--}}
+{{--                <!--end:Menu link-->--}}
+
+{{--                <!--begin:Menu sub-->--}}
+{{--                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('roi.dashboard') ? 'show' : '' }}">--}}
+
+{{--                    <!--begin:Page List-->--}}
+{{--                    <div class="menu-item mb-1">--}}
+{{--                        <a class="menu-link {{ request()->routeIs('roi.dashboard') ? 'active' : '' }}"--}}
+{{--                           href="{{ route('roi.dashboard') }}">--}}
+{{--                            <span class="menu-bullet">--}}
+{{--                                <span class="bullet bullet-dot"></span>--}}
+{{--                            </span>--}}
+{{--                            <span class="menu-title">ROI Dashboard</span>--}}
+{{--                        </a>--}}
+{{--                    </div>--}}
+{{--                    <!--end:Page List-->--}}
+
+{{--                    <!--begin:Create Page-->--}}
+{{--                    <div class="menu-item mb-1">--}}
+{{--                        <a class="menu-link {{ request()->routeIs('roi.list') ? 'active' : '' }}"--}}
+{{--                           href="{{ route('roi.list') }}">--}}
+{{--                            <span class="menu-bullet">--}}
+{{--                                <span class="bullet bullet-dot"></span>--}}
+{{--                            </span>--}}
+{{--                            <span class="menu-title">ROI List</span>--}}
+{{--                        </a>--}}
+{{--                    </div>--}}
+{{--                    <!--end:Create Page-->--}}
+
+{{--                </div>--}}
+{{--                <!--end:Menu sub-->--}}
+{{--            </div>--}}
+{{--            <!--end:ROI Health-->--}}
 
 
 
@@ -419,6 +473,18 @@
                 <!--end:Menu sub-->
             </div>
             <!--end:setting item-->
+
+            <!--begin:Menu item-->
+            <div class="menu-item pt-5">
+                <div class="menu-content">
+                    <form action="{{ route('cache.clear') }}" method="POST" id="clearCacheForm">
+                        @csrf
+                        <button type="submit" class="btn btn-light-danger fw-semibold ms-2" id="clearCacheBtn">
+                            <i class="fas fa-broom me-2"></i> Clear Cache
+                        </button>
+                    </form>
+                </div>
+            </div><!--end:Menu item-->
 
 
         </div>

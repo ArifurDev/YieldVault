@@ -157,4 +157,20 @@ class SettingController extends Controller
 
         return redirect()->back()->with('success', 'Referral settings updated successfully.');
     }
+
+
+    public function clearCache(Request $request)
+    {
+        try {
+            \Artisan::call('config:clear');
+            \Artisan::call('cache:clear');
+            \Artisan::call('view:clear');
+            \Artisan::call('route:clear');
+            \Artisan::call('optimize:clear');
+
+            return back()->with('success', '✅ All cache cleared successfully!');
+        } catch (\Exception $e) {
+            return back()->with('error', '❌ Failed to clear cache: ' . $e->getMessage());
+        }
+    }
 }
