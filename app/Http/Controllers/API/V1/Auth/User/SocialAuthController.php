@@ -38,7 +38,12 @@ class SocialAuthController extends Controller
                     // store data in database
                     $user = User::create([
                         'first_name'  => $socialiteUser->getName() ? explode(' ', $socialiteUser->getName())[0] : "Apple",
-                        'last_name'   => $socialiteUser->getName() ? (count(explode(' ', $socialiteUser->getName())) > 1 ? explode(' ', $socialiteUser->getName())[1] : null) : "User",
+//                        'last_name'   => $socialiteUser->getName() ? (count(explode(' ', $socialiteUser->getName())) > 1 ? explode(' ', $socialiteUser->getName())[1] : null) : "User",
+                        'last_name'   => $socialiteUser->getName()
+                            ? (count(explode(' ', $socialiteUser->getName())) > 1
+                                ? explode(' ', $socialiteUser->getName())[1]
+                                : explode(' ', $socialiteUser->getName())[0])
+                            : "User",
                         'email'       => $socialiteUser->getEmail(),
                         'provider'    => $provider,
                         'provider_id' => $socialiteUser->getId(),
