@@ -122,7 +122,7 @@ class ProfileController extends Controller
                 return $this->sendError('Current password is incorrect.', [], 422);
             }
 
-            $user->password = Hash::make($validated['current_password']);
+            $user->password = Hash::make($validated['new_password']);
             $user->save();
             return $this->sendResponse([], 'Password updated successfully.');
         }catch (\Exception $e){
