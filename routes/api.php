@@ -4,6 +4,7 @@ use App\Http\Controllers\API\V1\Auth\User\AuthenticationController;
 use App\Http\Controllers\API\V1\Auth\User\ForgotPasswordController;
 use App\Http\Controllers\API\V1\Auth\User\ProfileController;
 use App\Http\Controllers\API\V1\Auth\User\SocialAuthController;
+use App\Http\Controllers\API\V1\Auth\User\TwoFactorController;
 use App\Http\Controllers\API\V1\DailyTaskController;
 use App\Http\Controllers\API\V1\DynamicPageController;
 use App\Http\Controllers\API\V1\FirebaseTokenController;
@@ -54,6 +55,17 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
         // delete
         Route::delete('/delete-account', 'deleteAccount');
     });
+
+    /**
+     * Two-Factor Authentication
+     */
+    Route::prefix('v1/2FA')->controller(TwoFactorController::class)->group(function () {
+        Route::get('/',  'getTwoFactorStatus');
+        Route::post('/enable', 'enableTwoFactor');
+        Route::post('/disable','disableTwoFactor');
+        Route::post('/verify', 'verifyTwoFactor');
+    });
+
 
     /**
      * Auth Referral

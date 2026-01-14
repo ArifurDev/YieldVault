@@ -38,6 +38,12 @@ class User extends Authenticatable implements JWTSubject
         'ref_id',
         'account_number',
         'manager_id',
+
+
+        // 2FA
+        'two_factor_enabled',
+        'two_factor_email',
+        'two_factor_verified_at',
     ];
 
     /**
@@ -64,6 +70,10 @@ class User extends Authenticatable implements JWTSubject
             'account_number' => 'string',
             'manager_id' => 'integer',
             'role' => Role::class,
+
+            // 2FA
+            'two_factor_enabled'       => 'boolean',
+            'two_factor_verified_at'   => 'datetime',
         ];
     }
 
@@ -143,4 +153,39 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(WalletAccount::class);
     }
+
+
+
+    /*
+     * Two-Factor authentication
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_enabled === true
+            && !is_null($this->two_factor_verified_at);
+    }
+
+    public function twoFactorEmail(): ?string
+    {
+        return $this->two_factor_email ?? null;
+    }
+
+    public function setTwoFactorEmailAttribute($value): void
+    {
+        $this->attributes['two_factor_email'] = $value
+            ? strtolower(trim($value))
+            : null;
+    }
+
+    public function resetTwoFactorFailures(): void
+    {
+        $this->update(['failed_2fa_attempts' => 0]);
+    }
+
+    public function incrementTwoFactorFailures(): void
+    {
+        $this->increment('failed_2fa_attempts');
+    }
+
+
 }
