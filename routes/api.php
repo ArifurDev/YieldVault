@@ -26,6 +26,8 @@ use App\Http\Controllers\API\V1\Manager\WithdrawalRequestController;
 Route::prefix('v1')->controller(AuthenticationController::class)->group(function () {
     Route::post('/sign-up', 'signup');
     Route::post('/login', 'login');
+
+    Route::post('/login/2fa/verify', 'verifyTwoFactor')->middleware(['auth:api','2fa.temp']);
 });
 
 //! Route for forgot-password

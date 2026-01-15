@@ -34,16 +34,6 @@ class TwoFactorOtpService
             'expires_at' => now()->addMinutes(self::EXPIRY_MINUTES),
         ]);
 
-//        // Send OTP email
-//        Mail::raw(
-//            "Your verification code is {$otp}. It will expire in "
-//            . self::EXPIRY_MINUTES . " minutes.",
-//            function ($mail) use ($user) {
-//                $mail->to($user->twoFactorEmail())
-//                    ->subject('Two-Factor Authentication Code');
-//            }
-//        );
-
         $title = 'Two-Factor Authentication Code';
 
         Mail::to($user->twoFactorEmail())

@@ -12,6 +12,7 @@ use App\Enum\Wallet\TransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Requests\Api\V1\Auth\SignupRequest;
+use App\Http\Requests\Api\V1\TwoFactor\LoginTwoFactorVerifyRequest;
 use App\Http\Resources\Api\V1\Auth\UserResource;
 use App\Models\ActiveLog;
 use App\Models\DailyTask;
@@ -22,6 +23,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use App\Services\DataEncryptionService;
+use App\Services\TwoFactorOtpService;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -86,7 +88,7 @@ class AuthenticationController extends Controller
     /**
      * signing
      */
-    public function login(LoginRequest $request)
+    public function login(LoginRequest $request,TwoFactorOtpService $otpService)
     {
         $validatedData = $request->validated();
         try {
@@ -97,6 +99,30 @@ class AuthenticationController extends Controller
             }
 
             $user = Auth::user();
+
+            /**
+             * If 2FA is ENABLED
+             * → send OTP
+             * → return TEMP TOKEN
+             */
+            if ($user->hasTwoFactorEnabled()) {
+
+                // send OTP
+                $otpService->generate($user);
+
+                // TEMP token (short-lived, 2FA pending)
+                $tempToken = JWTAuth::claims([
+                    'two_factor' => true, // flag for middleware
+                    'type'       => '2fa',
+                ])->fromUser($user);
+
+                $data = [
+                    'two_factor_required' => true,
+                    'temp_token' => $tempToken,
+                ];
+
+                return $this->sendResponse($data,'Verification code sent to your email.');
+            }
 
             //  ACTIVITY LOG (LOGIN)
             ActiveLog::create([
@@ -114,6 +140,52 @@ class AuthenticationController extends Controller
             return $this->sendError("Failed to login:".$exception->getMessage(),[],500);
         }
     }
+
+    /**
+     * VERIFY LOGIN 2FA
+     * POST /auth/login/2fa/verify
+     */
+    public function verifyTwoFactor(LoginTwoFactorVerifyRequest $request, TwoFactorOtpService $otpService)
+    {
+        try {
+            $validated = $request->validated();
+
+            // TEMP token user
+            $user = Auth::user();
+
+            /**
+             * Ensure this token is a TEMP 2FA token
+             */
+            $payload = JWTAuth::parseToken()->getPayload();
+
+            if ($payload->get('two_factor') !== true) {
+                return $this->sendError("Invalid verification session.", [], 403);
+            }
+
+            // OTP verify
+            if (! $otpService->verify($user, $request->otp)) {
+                $user->incrementTwoFactorFailures();
+                return $this->sendError("Invalid or expired verification code.", [], 403);
+            }
+
+            // Reset failure count
+            $user->resetTwoFactorFailures();
+
+            // OTP correct → issue REAL JWT
+            $realToken = JWTAuth::fromUser($user);
+
+            return $this->sendResponse(new UserResource($user),'User verification successful.',200,$realToken);
+        }catch (\Exception $e){
+            Log::error("Failed to verify two factor authentication",[
+                'userId' => $user->id,
+                'exception' => $e->getMessage(),
+            ]);
+            return $this->sendError("Failed to verify two factor authentication.", [], 403);
+        }
+    }
+
+
+
 
     private function checkRef($data,$request,$user)
     {
