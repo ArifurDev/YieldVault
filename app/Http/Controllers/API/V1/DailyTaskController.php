@@ -13,6 +13,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use App\Helpers\translateHelper;
 
 class DailyTaskController extends Controller
 {
@@ -21,11 +22,13 @@ class DailyTaskController extends Controller
     /**
      * list of today task
      */
-    public function todayTask()
+    public function todayTask(Request $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             // get current data
             $today = now()->format('Y-m-d');
+
             $tasks = DailyTask::with(['task', 'logs' => function ($q) {
                 $q->where('user_id', auth()->id());
             }])
@@ -33,9 +36,24 @@ class DailyTaskController extends Controller
                 ->where('is_active', 1)
                 ->get();
 
-            return $this->sendResponse(getTodayTaskResource::collection($tasks), "List of today tasks retrieved successfully.");
+            $message = translateHelper::translateCached(
+                'today_task_list_success',
+                'Today’s tasks retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse(
+                getTodayTaskResource::collection($tasks),
+                $message
+            );
         } catch (\Exception $e) {
-            return $this->sendError("Failed to retrieved today task:" . $e->getMessage(), [], 500);
+            $message = translateHelper::translateCached(
+                'today_task_list_failed',
+                'Failed to retrieve today’s tasks. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 
@@ -44,6 +62,7 @@ class DailyTaskController extends Controller
      */
     public function taskCompleted(CompletedTaskRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         $validated = $request->validated();
 
         try {
@@ -57,12 +76,24 @@ class DailyTaskController extends Controller
              $dailyTask = DailyTask::with('task')->find($validated['daily_task_id']);
              // check if not found
              if (!$dailyTask) {
-                 return $this->sendError("Daily task not found", [], 404);
+                $message = translateHelper::translateCached(
+                    'daily_task_not_found',
+                    'Daily task not found.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 404);
              }
 
              // check if task is for today
              if ($dailyTask->date->format('Y-m-d') !== $today) {
-                 return $this->sendError("You can only complete today's task.", [], 400);
+                $message = translateHelper::translateCached(
+                    'daily_task_not_today',
+                    'You can only complete today’s task.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 400);
              }
 
              // prevent double completion
@@ -70,7 +101,13 @@ class DailyTaskController extends Controller
                  ->where('user_id', $user->id)
                  ->exists();
              if ($alreadyDone) {
-                 return $this->sendError("You already completed this task.", [], 400);
+                $message = translateHelper::translateCached(
+                    'daily_task_already_completed',
+                    'You have already completed this task.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 400);
              } else {
              // Create log
              DailyTaskLog::create([
@@ -79,18 +116,31 @@ class DailyTaskController extends Controller
                'daily_task_id' => $dailyTask->id,
                'xp_rewarded'   => $dailyTask->task->xp,
              ]);
-                 return $this->sendResponse([], "Daily task completed.", 200);
+                $message = translateHelper::translateCached(
+                    'daily_task_completed_success',
+                    'Daily task completed successfully.',
+                    $lang
+                );
+
+                return $this->sendResponse([], $message, 200);
              }
         } catch (\Exception $e) {
-            return $this->sendError("Failed to completed daily task:" . $e->getMessage(), [], 500);
+            $message = translateHelper::translateCached(
+                'daily_task_completed_failed',
+                'Failed to complete daily task. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 
     /**
      * Task History (XP + Streak + Completed + Pending)
      */
-    public function historyTask()
+    public function historyTask(Request $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $userId = auth()->id();
 

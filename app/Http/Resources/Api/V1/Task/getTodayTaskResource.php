@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Helpers\translateHelper;
 
 class getTodayTaskResource extends JsonResource
 {
@@ -19,6 +20,7 @@ class getTodayTaskResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $lang = $request->header('Accept-Language', 'en');
 //        return parent::toArray($request);
         $task = $this->task;
 
@@ -26,11 +28,6 @@ class getTodayTaskResource extends JsonResource
         $userCompleted = $this->logs
             ->where('user_id', auth()->id())
             ->isNotEmpty();
-        Log::info('Task media path', [
-            'id' => $task->id,
-            'media_type' => $task->media_type,
-            'media_path' => $task->media_path,
-        ]);
 
         return [
             'id'         => $this->id,
@@ -40,7 +37,11 @@ class getTodayTaskResource extends JsonResource
 
             'task' => $task ? [
                 'id'         => $task->id,
-                'title'      => $task->title,
+                'title'      => $task->title ?  translateHelper::translateCached(
+                    'task_title_' . md5($task->id),
+                    $task->title,
+                    $lang
+                ) : null,
                 'type'       => $task->type->value,
                 'xp'         => $task->xp,
                 'duration'   => $task->duration,
@@ -52,24 +53,6 @@ class getTodayTaskResource extends JsonResource
         ];
     }
 
-//    private function generateMediaUrl($task)
-//    {
-//        if (!$task) return null;
-//
-//
-//        $mediaType = $task->media_type?->value;
-//        Log::info("media_type: $mediaType");
-//
-//        if (in_array($mediaType, ['image', 'video'])) {
-//            return helpers::generateTempURL($task->media_path,config('app.file_system'));
-//        }
-//
-//        if ($task->media_type === 'url') {
-//            return $task->media_path;
-//        }
-//
-//        return null;
-//    }
 
     private function generateMediaUrl($task)
     {
@@ -80,7 +63,7 @@ class getTodayTaskResource extends JsonResource
 
         $mediaType = $task->media_type?->value;
 
-        // 🎥 VIDEO → STREAM ROUTE
+        //  VIDEO → STREAM ROUTE
         if ($mediaType === 'video') {
             return route('media', ['path' => $task->media_path]);
         }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1\Auth\User;
 
 use App\Helpers\helpers;
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Models\DailyTask;
 use App\Models\DailyTaskLog;
@@ -17,8 +18,9 @@ class ReferralController extends Controller
     /**
      * get auth referral
      */
-    public function index()
+    public function index(Request $request)
     {
+         $lang = $request->header('Accept-Language', 'en');
         try {
             $jwt = app(DataEncryptionService::class);
 
@@ -48,9 +50,21 @@ class ReferralController extends Controller
                     : null,
             ];
 
-            return $this->sendResponse($response, 'Referral list retrieved successfully.');
+             $message = translateHelper::translateCached(
+                'referral_list_success',
+                'Referral list retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse($response, $message);
         }catch (\Exception $e){
-            return $this->sendError("Failed to retrieve data:".$e->getMessage(), [],500);
+            $message = translateHelper::translateCached(
+                'referral_list_failed',
+                'Failed to retrieve referral data. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 
