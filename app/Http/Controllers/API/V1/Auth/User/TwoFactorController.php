@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\API\V1\Auth\User;
 
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\TwoFactor\DisableTwoFactorRequest;
 use App\Http\Requests\Api\V1\TwoFactor\EnableTwoFactorRequest;
 use App\Http\Requests\Api\V1\TwoFactor\VerifyTwoFactorRequest;
 use App\Services\TwoFactorOtpService;
 use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
@@ -18,8 +20,9 @@ class TwoFactorController extends Controller
     /**
      * Get 2FA status
      */
-    public function getTwoFactorStatus()
+    public function getTwoFactorStatus(Request $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             // get current auth
             $user = auth()->user();
@@ -28,16 +31,28 @@ class TwoFactorController extends Controller
 
             $data = [
                 'enabled' => $user->hasTwoFactorEnabled(),
-                'email'   => $maskedEmail,
+                'email' => $maskedEmail,
             ];
 
-            return $this->sendResponse($data,"Two Factor Authentication Status retrieved successfully");
-        }catch (\Exception $e){
-            Log::error("Get Two Factor Status failed",[
+            $message = translateHelper::translateCached(
+                'two_factor_status_retrieved',
+                'Two-factor authentication status retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse($data, $message);
+        } catch (\Exception $e) {
+            Log::error("Get Two Factor Status failed", [
                 'userId' => $user->id,
                 'message' => $e->getMessage(),
             ]);
-            return $this->sendError("Get Two Factor Status failed",[],500);
+            $message = translateHelper::translateCached(
+                'two_factor_status_failed',
+                'Failed to retrieve two-factor authentication status. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 
@@ -49,6 +64,7 @@ class TwoFactorController extends Controller
      */
     public function enableTwoFactor(EnableTwoFactorRequest $request, TwoFactorOtpService $otpService)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             // validation
             $validated = $request->validated();
@@ -58,12 +74,24 @@ class TwoFactorController extends Controller
 
             // verify current password
             if (!Hash::check($request->input('current_password'), $user->password)) {
-                return $this->sendError('Current password is incorrect.', [], 422);
+                $message = translateHelper::translateCached(
+                    'two_factor_password_incorrect',
+                    'Current password is incorrect.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 422);
             }
 
             // Already enabled check
             if ($user->hasTwoFactorEnabled()) {
-                return $this->sendError('Two-factor authentication already enabled.',[],422);
+                $message = translateHelper::translateCached(
+                    'two_factor_already_enabled',
+                    'Two-factor authentication is already enabled.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 422);
             }
 
             if ($validated['email']) {
@@ -73,13 +101,25 @@ class TwoFactorController extends Controller
             // OTP send
             $otpService->generate($user);
 
-            return $this->sendResponse([],'Verification code sent to your email.');
-        }catch (\Exception $e){
-            Log::error("EnableTwoFactor Exception: ",[
+            $message = translateHelper::translateCached(
+                'two_factor_otp_sent',
+                'Verification code sent to your email.',
+                $lang
+            );
+
+            return $this->sendResponse([], $message);
+        } catch (\Exception $e) {
+            Log::error("EnableTwoFactor Exception: ", [
                 'userId' => $user->id,
                 'message' => $e->getMessage(),
             ]);
-            return $this->sendError("Failed to send verification code.", [], 422);
+            $message = translateHelper::translateCached(
+                'two_factor_enable_failed',
+                'Failed to send verification code. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 
@@ -91,30 +131,56 @@ class TwoFactorController extends Controller
      */
     public function disableTwoFactor(DisableTwoFactorRequest $request, TwoFactorOtpService $otpService)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
 
             // get current auth
             $user = auth()->user();
 
-            if (! $user->hasTwoFactorEnabled()) {
-                return $this->sendError('Two-factor authentication is not enabled.',[],422);
+            if (!$user->hasTwoFactorEnabled()) {
+                $message = translateHelper::translateCached(
+                    'two_factor_not_enabled',
+                    'Two-factor authentication is not enabled.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 422);
             }
 
-            if (! Hash::check($validated['password'], $user->password)) {
-                return $this->sendError('Incorrect password.',[],422);
+            if (!Hash::check($validated['password'], $user->password)) {
+
+                $message = translateHelper::translateCached(
+                    'two_factor_password_incorrect',
+                    'Incorrect password.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 422);
             }
 
             // OTP send
             $otpService->generate($user);
 
-            return $this->sendResponse([], 'Verification code sent to your email.');
-        }catch (\Exception $e){
-            Log::error("DisableTwoFactor Exception: ",[
+            $message = translateHelper::translateCached(
+                'two_factor_otp_sent',
+                'Verification code sent to your email.',
+                $lang
+            );
+
+            return $this->sendResponse([], $message);
+        } catch (\Exception $e) {
+            Log::error("DisableTwoFactor Exception: ", [
                 'userId' => $user->id,
                 'message' => $e->getMessage(),
             ]);
-            return $this->sendError("Failed to send verification code.", [], 422);
+            $message = translateHelper::translateCached(
+                'two_factor_disable_failed',
+                'Failed to send verification code. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 
@@ -124,6 +190,7 @@ class TwoFactorController extends Controller
      */
     public function verifyTwoFactor(VerifyTwoFactorRequest $request, TwoFactorOtpService $otpService)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
 
@@ -133,9 +200,15 @@ class TwoFactorController extends Controller
             $user = $request->user();
 
             // OTP verify
-            if (! $otpService->verify($user, $request->otp)) {
+            if (!$otpService->verify($user, $request->otp)) {
                 $user->incrementTwoFactorFailures();
-                return $this->sendError('Invalid or expired verification code.',[],422);
+                $message = translateHelper::translateCached(
+                    'two_factor_invalid_code',
+                    'Invalid or expired verification code.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 422);
             }
 
             // Reset failure count
@@ -145,46 +218,71 @@ class TwoFactorController extends Controller
             if ($action === 'enable') {
 
                 if ($user->hasTwoFactorEnabled()) {
-                    return $this->sendError('Two-factor authentication already enabled.',[],422);
+                    $message = translateHelper::translateCached(
+                        'two_factor_already_enabled',
+                        'Two-factor authentication is already enabled.',
+                        $lang
+                    );
+
+                    return $this->sendError($message, [], 422);
                 }
 
                 $user->update([
-                    'two_factor_enabled'     => true,
+                    'two_factor_enabled' => true,
                     'two_factor_verified_at' => now(),
                 ]);
 
-                // notify
-
+                $message = translateHelper::translateCached(
+                    'two_factor_enabled_success',
+                    'Two-factor authentication enabled successfully.',
+                    $lang
+                );
 
                 return $this->sendResponse([
-                    'two_factor_enabled'    => true,
-                ],
-                    'Two-factor authentication enabled successfully.');
+                    'two_factor_enabled' => true,
+                ], $message);
             }
 
             if ($request->action === 'disable') {
 
-                if (! $user->hasTwoFactorEnabled()) {
-                    return $this->sendError('Two-factor authentication already disabled.',[],422);
+                if (!$user->hasTwoFactorEnabled()) {
+                    $message = translateHelper::translateCached(
+                        'two_factor_already_disabled',
+                        'Two-factor authentication is already disabled.',
+                        $lang
+                    );
+
+                    return $this->sendError($message, [], 422);
                 }
 
                 $user->update([
-                    'two_factor_enabled'     => false,
+                    'two_factor_enabled' => false,
                     'two_factor_verified_at' => null,
-                    'two_factor_email'       => null,
+                    'two_factor_email' => null,
                 ]);
 
+                $message = translateHelper::translateCached(
+                    'two_factor_disabled_success',
+                    'Two-factor authentication disabled successfully.',
+                    $lang
+                );
+
                 return $this->sendResponse([
-                    'two_factor_enabled'    => false,
-                ],
-                    'Two-factor authentication disabled successfully.');
+                    'two_factor_enabled' => false,
+                ], $message);
             }
-        }catch (\Exception $e){
-            Log::error("VerifyTwoFactor Exception: ",[
+        } catch (\Exception $e) {
+            Log::error("VerifyTwoFactor Exception: ", [
                 'userId' => $user->id,
                 'message' => $e->getMessage(),
             ]);
-            return $this->sendError("Failed to verify two-factor authentication.", [], 422);
+            $message = translateHelper::translateCached(
+                'two_factor_verify_failed',
+                'Failed to verify two-factor authentication. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 

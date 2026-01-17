@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1\Auth\User;
 
 use App\Enum\Role;
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\SocialAuthRequest;
 use App\Http\Resources\Api\V1\Auth\SocialAuthResource;
@@ -17,6 +18,7 @@ class SocialAuthController extends Controller
     use ApiResponse;
     public function SocialLogin(SocialAuthRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         $validated = $request->validated();
 
         try {
@@ -56,7 +58,23 @@ class SocialAuthController extends Controller
                 $token = auth('api')->login($user);
             }
 
-            return $this->sendResponse(new SocialAuthResource($user),$isNewUser ? "User Register Successfully" : "User Login Successfully",200,$token);
+            // Success message
+            $message = translateHelper::translateCached(
+                $isNewUser ? 'social_register_success' : 'social_login_success',
+                $isNewUser
+                    ? 'User registered successfully.'
+                    : 'User logged in successfully.',
+                $lang
+            );
+
+            return $this->sendResponse(
+                new SocialAuthResource($user),
+                $message,
+                200,
+                $token
+            );
+
+//            return $this->sendResponse(new SocialAuthResource($user),$isNewUser ? "User Register Successfully" : "User Login Successfully",200,$token);
         }catch (\Exception $exception){
             return $this->sendError("Something Went Wrong:". $exception->getMessage(),[],500);
         }

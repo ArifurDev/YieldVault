@@ -9,6 +9,7 @@ use App\Enum\Role;
 use App\Enum\Wallet\TransactionSource;
 use App\Enum\Wallet\TransactionStatus;
 use App\Enum\Wallet\TransactionType;
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Requests\Api\V1\Auth\SignupRequest;
@@ -40,6 +41,8 @@ class AuthenticationController extends Controller
      */
     public function signup(SignupRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
+
         $validated = $request->validated();
 
         DB::beginTransaction();
@@ -78,11 +81,19 @@ class AuthenticationController extends Controller
             ]);
             DB::commit();
             // success response
-            return $this->sendResponse(new UserResource($user),'User registration successful.',200,$token);
+            $messageKey = 'user_registered_successfully';
+
+            $message = translateHelper::translateCached(
+                $messageKey,
+                'User registration successful.',
+                $lang
+            );
+
+            return $this->sendResponse(new UserResource($user),$message,200,$token);
         }catch (\Exception $exception){
             DB::rollBack();
             Log::error("Failed to create account:".$exception->getMessage());
-            return $this->sendError("Failed to create account:".$exception->getMessage(),[],500);
+            return $this->sendError("Account creation failed. Please try again later.",[],500);
         }
     }
     /**
@@ -90,12 +101,19 @@ class AuthenticationController extends Controller
      */
     public function login(LoginRequest $request,TwoFactorOtpService $otpService)
     {
+        $lang = $request->header('Accept-Language', 'en');
         $validatedData = $request->validated();
         try {
 
             // Attempt to log the user in
             if (!$token = JWTAuth::attempt($validatedData)) {
-                return $this->sendError('Invalid credentials. Please check your email and password.', [], 401);
+                $message = translateHelper::translateCached(
+                    'login_invalid_credentials',
+                    'Invalid credentials. Please check your email and password.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 401);
             }
 
             $user = Auth::user();
@@ -120,8 +138,13 @@ class AuthenticationController extends Controller
                     'two_factor_required' => true,
                     'temp_token' => $tempToken,
                 ];
+                $message = translateHelper::translateCached(
+                    'two_factor_otp_sent',
+                    'Verification code sent to your email.',
+                    $lang
+                );
 
-                return $this->sendResponse($data,'Verification code sent to your email.');
+                return $this->sendResponse($data, $message);
             }
 
             //  ACTIVITY LOG (LOGIN)
@@ -134,10 +157,17 @@ class AuthenticationController extends Controller
                 'level'          => Level::INFO,
             ]);
 
-            return $this->sendResponse(new UserResource($user), 'User logged in successfully.', 200, $token);
+            // Success response (translated)
+            $message = translateHelper::translateCached(
+                'user_logged_in_successfully',
+                'User logged in successfully.',
+                $lang
+            );
+
+            return $this->sendResponse(new UserResource($user), $message, 200, $token);
         }catch (\Exception $exception){
-            Log::error("Failed to login:".$exception->getMessage());
-            return $this->sendError("Failed to login:".$exception->getMessage(),[],500);
+            Log::error("Failed to login:". $exception->getMessage());
+            return $this->sendError("Login failed. Please try again later.",[],500);
         }
     }
 
@@ -147,6 +177,7 @@ class AuthenticationController extends Controller
      */
     public function verifyTwoFactor(LoginTwoFactorVerifyRequest $request, TwoFactorOtpService $otpService)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
 
@@ -159,13 +190,23 @@ class AuthenticationController extends Controller
             $payload = JWTAuth::parseToken()->getPayload();
 
             if ($payload->get('two_factor') !== true) {
-                return $this->sendError("Invalid verification session.", [], 403);
+                $message = translateHelper::translateCached(
+                    'invalid_verification_session',
+                    'Invalid verification session.',
+                    $lang
+                );
             }
 
             // OTP verify
             if (! $otpService->verify($user, $request->otp)) {
                 $user->incrementTwoFactorFailures();
-                return $this->sendError("Invalid or expired verification code.", [], 403);
+                $message = translateHelper::translateCached(
+                    'invalid_or_expired_otp',
+                    'Invalid or expired verification code.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 403);
             }
 
             // Reset failure count
@@ -174,7 +215,14 @@ class AuthenticationController extends Controller
             // OTP correct → issue REAL JWT
             $realToken = JWTAuth::fromUser($user);
 
-            return $this->sendResponse(new UserResource($user),'User verification successful.',200,$realToken);
+            // Success response
+            $message = translateHelper::translateCached(
+                'two_factor_verified_successfully',
+                'Verification successful.',
+                $lang
+            );
+
+            return $this->sendResponse(new UserResource($user),$message,200,$realToken);
         }catch (\Exception $e){
             Log::error("Failed to verify two factor authentication",[
                 'userId' => $user->id,
@@ -183,9 +231,6 @@ class AuthenticationController extends Controller
             return $this->sendError("Failed to verify two factor authentication.", [], 403);
         }
     }
-
-
-
 
     private function checkRef($data,$request,$user)
     {

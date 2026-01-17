@@ -1,5 +1,6 @@
 <?php
 
+use App\Helpers\translateHelper;
 use App\Http\Controllers\API\V1\Auth\User\AuthenticationController;
 use App\Http\Controllers\API\V1\Auth\User\ForgotPasswordController;
 use App\Http\Controllers\API\V1\Auth\User\ProfileController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\API\V1\WalletController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\V1\Manager\DepositRequestController;
 use App\Http\Controllers\API\V1\Manager\WithdrawalRequestController;
+use Illuminate\Http\Request;
 
 //! Route for user
 Route::prefix('v1')->controller(AuthenticationController::class)->group(function () {
@@ -211,4 +213,24 @@ Route::get('v1/ref/{token}', [ReferralController::class, 'handle']);
 Route::prefix('v1/dynamic-pages')->controller(DynamicPageController::class)->group(function () {
     Route::get('/', 'getTitle');
     Route::get('/{slug}', 'getDetails');
+});
+
+
+
+Route::get('/test', function (Request $request) {
+    $lang = $request->header('Accept-Language', 'en');
+
+
+    $message = translateHelper::translateCached(
+        'test_message',
+        'User registration successful.',
+        $lang
+    );
+
+
+   $title = "hello world";
+   return response()->json([
+       'lang' => $lang,
+       'title' =>$message,
+   ]);
 });
