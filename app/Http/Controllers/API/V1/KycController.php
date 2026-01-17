@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Helpers\helpers;
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Kyc\DocumentUpdateRequest;
 use App\Http\Requests\Api\V1\Kyc\indexRequest;
@@ -29,13 +30,21 @@ class KycController extends Controller
      */
     public function index(indexRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         $validated = $request->validated();
         try {
             // get current auth
             $user = auth()->user();
 
             if (!in_array($user->role->value, ['admin', 'manager'])) {
-                return $this->sendError('You do not have permission to view this document.', [], 422);
+
+                $message = translateHelper::translateCached(
+                    'kyc_permission_denied',
+                    'You do not have permission to view this document.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 422);
             }
 
             $page = $validated['page'] ?? 1;
@@ -55,10 +64,25 @@ class KycController extends Controller
 
             $documents = $query->paginate($perPage, ['*'], 'page', $page);
 
-            return $this->sendResponse(getDataResource::collection($documents), 'KYC requests fetched successfully.');
+            $message = translateHelper::translateCached(
+                'kyc_list_success',
+                'KYC requests fetched successfully.',
+                $lang
+            );
+
+            return $this->sendResponse(
+                getDataResource::collection($documents),
+                $message
+            );
         } catch (\Exception $e) {
             Log::error("Failed to fetch KYC documents:" . $e->getMessage());
-            return $this->sendError("Failed to fetch KYC documents:" . $e->getMessage(), [], 500);
+            $message = translateHelper::translateCached(
+                'kyc_list_failed',
+                'Failed to fetch KYC requests. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 
@@ -67,6 +91,7 @@ class KycController extends Controller
      */
     public function submitDocument(submissionRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
             $user = auth()->user();
@@ -76,10 +101,22 @@ class KycController extends Controller
             $kycDocument = KycDocument::where('user_id', $user->id)->latest()->first();
             if (!empty($kycDocument)) {
                 if ($kycDocument->status == 'Pending') {
-                    return $this->sendError("KYC document already submitted.Under review.", [], 400);
+                    $message = translateHelper::translateCached(
+                        'kyc_already_pending',
+                        'KYC document already submitted. Under review.',
+                        $lang
+                    );
+
+                    return $this->sendError($message, [], 400);
                 }
                 if ($kycDocument->status == 'Approved') {
-                    return $this->sendError("KYC document already submitted.", [], 400);
+                    $message = translateHelper::translateCached(
+                        'kyc_already_approved',
+                        'KYC document already submitted.',
+                        $lang
+                    );
+
+                    return $this->sendError($message, [], 400);
                 }
             }
 
@@ -92,10 +129,15 @@ class KycController extends Controller
                     !$request->hasFile('file_side_1') ||
                     !$request->hasFile('file_side_2')
                 ) {
-                    return $this->sendError(strtoupper($docType) . ' requires both front and back images.', [],422);
+                    $message = translateHelper::translateCached(
+                        'kyc_both_sides_required',
+                        'This document requires both front and back images.',
+                        $lang
+                    );
+
+                    return $this->sendError($message, [], 422);
                 }
             }
-
 
             /**
              * Upload files
@@ -127,10 +169,22 @@ class KycController extends Controller
 
             User::find($user->id)->update(['kyc_status' => 'Pending']);
 
-            return $this->sendResponse([], 'Document submitted successfully. Under review.', 200);
+            $message = translateHelper::translateCached(
+                'kyc_submit_success',
+                'Document submitted successfully. Under review.',
+                $lang
+            );
+
+            return $this->sendResponse([], $message, 200);
         } catch (\Exception $e) {
             Log::error("Failed to submit KYC document:" . $e->getMessage());
-            return $this->sendError("Failed to submit KYC document", [], 500);
+            $message = translateHelper::translateCached(
+                'kyc_submit_failed',
+                'Failed to submit KYC document. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
 
     }
@@ -139,8 +193,9 @@ class KycController extends Controller
      * View a single KYC document
      * If ID not provided, fetch current user's latest document
      */
-    public function show($documentId = null)
+    public function show(Request $request,$documentId = null)
     {
+        $lang = $request->header('Accept-Language', 'en');
         $user = auth()->user();
 
         if ($documentId) {
@@ -155,10 +210,26 @@ class KycController extends Controller
         }
 
         if (!$document) {
-            return $this->sendError('Document not found.', [], 404);
+
+            $message = translateHelper::translateCached(
+                'kyc_document_not_found',
+                'Document not found.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 404);
         }
 
-        return $this->sendResponse(new ShowDataResource($document), 'Document retrieved successfully.');
+        $message = translateHelper::translateCached(
+            'kyc_document_retrieved',
+            'Document retrieved successfully.',
+            $lang
+        );
+
+        return $this->sendResponse(
+            new ShowDataResource($document),
+            $message
+        );
     }
 
     /**
@@ -166,20 +237,39 @@ class KycController extends Controller
      */
     public function updateDocument(UpdateDocumentRequest $request,$id)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
             // get current user
             $user = auth()->user();
             $document = KycDocument::with('user')->find($id);
             if (!$document) {
-                return $this->sendError('Document not found.', [], 404);
+                $message = translateHelper::translateCached(
+                    'kyc_document_not_found',
+                    'Document not found.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 404);
             }
             if ($document->user_id != $user->id) {
-                return $this->sendError('You are not allowed to update this document.', [], 403);
+                $message = translateHelper::translateCached(
+                    'kyc_update_not_allowed',
+                    'You are not allowed to update this document.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 403);
             }
             // Only rejected documents can be updated
             if ($document->status !== 'Rejected') {
-                return $this->sendError('Only rejected KYC documents can be updated.', [], 422);
+                $message = translateHelper::translateCached(
+                    'kyc_update_only_rejected',
+                    'Only rejected KYC documents can be updated.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 422);
             }
 
             /**
@@ -190,11 +280,12 @@ class KycController extends Controller
                     !$request->hasFile('file_side_1') ||
                     !$request->hasFile('file_side_2')
                 ) {
-                    return $this->sendError(
-                        strtoupper($document->document_type) . ' requires both front and back images.',
-                        [],
-                        422
+                    $message = translateHelper::translateCached(
+                        'kyc_both_sides_required',
+                        'This document requires both front and back images.',
+                        $lang
                     );
+                    return $this->sendError($message, [], 422);
                 }
             }
 
@@ -235,7 +326,13 @@ class KycController extends Controller
 
             if ($newType === 'passport') {
                 if (!$request->hasFile('file_side_1') && !$request->hasFile('file_side_2')) {
-                    return $this->sendError('Passport requires at least one image.', [], 422);
+                    $message = translateHelper::translateCached(
+                        'kyc_passport_one_side_required',
+                        'Passport requires at least one image.',
+                        $lang
+                    );
+
+                    return $this->sendError($message, [], 422);
                 }
             }
             /**
@@ -267,31 +364,55 @@ class KycController extends Controller
             $user->update(['kyc_status' => 'Pending']);
 
             DB::commit();
-            return $this->sendResponse([],'KYC document updated successfully. Under review.');
+            $message = translateHelper::translateCached(
+                'kyc_update_success',
+                'KYC document updated successfully. Under review.',
+                $lang
+            );
+
+            return $this->sendResponse([], $message);
         }catch (\Exception $e) {
             DB::rollBack();
             Log::error("Failed to update KYC document:" . $e->getMessage());
-            return $this->sendError("Failed to update KYC document", [], 500);
+            $message = translateHelper::translateCached(
+                'kyc_update_failed',
+                'Failed to update KYC document. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
-
 
     /**
      * update update Approve/Reject KYC - admin or manager
      */
     public function update(DocumentUpdateRequest $request, $documentId)
     {
+        $lang = $request->header('Accept-Language', 'en');
         $validated = $request->validated();
 
         try {
             // get current auth
             $user = auth()->user();
             if (!in_array($user->role->value, ['admin', 'manager'])) {
-                return $this->sendError('You do not have permission to view this document.', [], 422);
+                $message = translateHelper::translateCached(
+                    'kyc_permission_denied',
+                    'You do not have permission to view this document.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 422);
             }
             $document = KycDocument::with('user')->find($documentId);
             if (empty($document)) {
-                return $this->sendError('Document not found.', [], 404);
+                $message = translateHelper::translateCached(
+                    'kyc_document_not_found',
+                    'Document not found.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 404);
             }
 
             // message
@@ -310,7 +431,13 @@ class KycController extends Controller
 
                 // FINAL SAFETY CHECK (CORRECT)
                 if ($document->reviewed_by !== null) {
-                    throw new \Exception('This KYC document has already been reviewed.');
+                    throw new \RuntimeException(
+                        translateHelper::translateCached(
+                            'kyc_already_reviewed',
+                            'This KYC document has already been reviewed.',
+                            $lang
+                        )
+                    );
                 }
 
                 // Update document
