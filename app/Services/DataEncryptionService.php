@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use Illuminate\Support\Facades\Log;
 
 class DataEncryptionService
 {
@@ -12,8 +13,15 @@ class DataEncryptionService
 
     public function __construct()
     {
-        $this->secret = env('JWT_SECRET');
-        $this->algo   = env('JWT_ALGO', 'HS256');
+        $this->secret = config('jwt.secret');
+        $this->algo   = config('jwt.algo', 'HS256');
+
+        if (empty($this->secret)) {
+            throw new \RuntimeException(
+                'JWT_SECRET is null. Check .env and run php artisan config:clear'
+            );
+        }
+
     }
 
     public function encrypt($data): string

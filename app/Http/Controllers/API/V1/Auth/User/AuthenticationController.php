@@ -49,10 +49,21 @@ class AuthenticationController extends Controller
         try {
             $jwt = app(DataEncryptionService::class);
 
+            // Normalize input → English
+            $firstNameEn = translateHelper::toEnglish(
+                $validated['first_name'],
+                $lang
+            );
+
+            $lastNameEn = translateHelper::toEnglish(
+                $validated['last_name'],
+                $lang
+            );
+
             // store data in database
             $user = User::create([
-                'first_name' => $validated['first_name'],
-                'last_name'  => $validated['last_name'],
+                'first_name' => $firstNameEn,
+                'last_name'  => $lastNameEn,
                 'email'      => $validated['email'],
                 'password'   => Hash::make($validated['password']),
                 'role'       => Role::USER->value,

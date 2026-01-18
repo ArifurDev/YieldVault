@@ -30,40 +30,6 @@ class translateHelper
         return $tr->translate($text);
     }
 
-    /**
-     * @throws LargeTextException
-     * @throws RateLimitException
-     * @throws TranslationRequestException
-     */
-//    public static function translateCached(string $key, string $text, string $lang)
-//    {
-//        if ($lang === 'en') {
-//            return $text;
-//        }
-//
-//        $cacheKey = "translation.{$key}.{$lang}";
-//
-//        // Return cached value if exists
-//        if (Cache::has($cacheKey)) {
-//            return Cache::get($cacheKey);
-//        }
-//
-//        // Check DB
-//        $row = DB::table('translations')
-//            ->where('key', $key)
-//            ->where('lang', $lang)
-//            ->first();
-//
-//        if ($row) {
-//            Cache::put($cacheKey, $row->value, 86400);
-//            return $row->value;
-//        }
-//        $translated = self::translateText($text, $lang);
-//        TranslateTextJob::dispatch($key, $text, $lang);  // Dispatch job ONCE
-//
-//        return $text;  //  Fallback response
-//    }
-
     public static function translateCached(string $key, string $text, string $lang)
     {
         // English = master (no translation)

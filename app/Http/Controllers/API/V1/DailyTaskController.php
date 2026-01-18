@@ -201,7 +201,11 @@ class DailyTaskController extends Controller
 
                 $history[$date][] = [
                     'task_id' => $task->id,
-                    'task_title' => $task->title,
+                    'task_title' => $task->title ?  translateHelper::translateCached(
+                        'task_title_' . md5($task->id),
+                        $task->title,
+                        $lang
+                    ) : null,
                     'xp' => $task->xp,
                     'type' => $task->type,
                     'status' => 'completed',
@@ -258,11 +262,23 @@ class DailyTaskController extends Controller
                 'history' => $history,
             ];
 
-            return $this->sendResponse($response, "Tasks history retrieved successfully.");
+            $message = translateHelper::translateCached(
+                'task_history_success',
+                'Tasks history retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse($response, $message);
 
         } catch (\Exception $e) {
             Log::error("Failed to retrieve daily tasks history: " . $e->getMessage());
-            return $this->sendError("Failed to retrieve daily tasks history.", [], 500);
+            $message = translateHelper::translateCached(
+                'task_history_failed',
+                'Failed to retrieve tasks history. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 

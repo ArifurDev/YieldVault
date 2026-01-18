@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Helpers\helpers;
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\Level\getLevelsResource;
 use App\Models\DailyTaskLog;
@@ -18,8 +19,9 @@ class LevelController extends Controller
     /**
      * get all levels
      */
-    public function getLevels()
+    public function getLevels(Request $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             Log::info('duplicate route accessed');
             // get current user id
@@ -66,14 +68,22 @@ class LevelController extends Controller
                     'current_xp'        => $userXp,
                     'current_level'     => $currentLevel ? [
                         'id'        => $currentLevel->id,
-                        'name'      => $currentLevel->name,
+                        'name'      => $currentLevel->name ?  translateHelper::translateCached(
+                            'task_title_' . md5($currentLevel->id),
+                            $currentLevel->name,
+                            $lang
+                        ) : null,
                         'daily_roi' => $currentLevel->daily_roi,
                         'icon'      => asset($currentLevel->icon),
                     ] : null,
 
                     'next_level' => $nextLevel ? [
                         'id'          => $nextLevel->id,
-                        'name'        => $nextLevel->name,
+                        'name'        => $nextLevel->name ?  translateHelper::translateCached(
+                            'task_title_' . md5($nextLevel->id),
+                            $nextLevel->name,
+                            $lang
+                        ) : null,
                         'required_xp' => $nextLevel->required_xp,
                     ] : null,
 
@@ -90,18 +100,35 @@ class LevelController extends Controller
                 'levels' => getLevelsResource::collection($levels)
             ];
 
-            return $this->sendResponse($data, 'Levels retrieved successfully.');
+            $message = translateHelper::translateCached(
+                'levels_retrieved_success',
+                'Levels retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse($data, $message);
         }catch (\Exception $e){
-            return $this->sendError("Failed to retrieve levels:".$e->getMessage(), [], 500);
+            Log::error('Failed to retrieve levels', [
+                'user_id' => auth()->id(),
+                'error'   => $e->getMessage(),
+            ]);
+
+            $message = translateHelper::translateCached(
+                'levels_retrieved_failed',
+                'Failed to retrieve levels. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
     /**
      *  get current progress
      */
-    public function currentProgress()
+    public function currentProgress(Request $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
-            Log::info('duplicate route accessed');
             // get current user id
             $userId = auth()->user()->id;
 
@@ -169,9 +196,26 @@ class LevelController extends Controller
                 ],
             ];
 
-            return $this->sendResponse($data, 'Levels retrieved successfully.');
+            $message = translateHelper::translateCached(
+                'current_progress_retrieved_success',
+                'Current progress retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse($data, $message);
         }catch (\Exception $e){
-            return $this->sendError("Failed to retrieve levels:".$e->getMessage(), [], 500);
+            Log::error('Failed to retrieve current progress', [
+                'user_id' => auth()->id(),
+                'error'   => $e->getMessage(),
+            ]);
+
+            $message = translateHelper::translateCached(
+                'current_progress_retrieved_failed',
+                'Failed to retrieve current progress. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 }

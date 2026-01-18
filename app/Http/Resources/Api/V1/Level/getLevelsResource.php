@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Level;
 
+use App\Helpers\translateHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -15,9 +16,14 @@ class getLevelsResource extends JsonResource
     public function toArray(Request $request): array
     {
 //        return parent::toArray($request);
+        $lang = $request->header('Accept-Language', 'en');
         return [
             'id'              => $this->id,
-            'name'            => $this->name,
+            'name'            => $this->name ?  translateHelper::translateCached(
+                'task_title_' . md5($this->id),
+                $this->name,
+                $lang
+            ) : null,
             'slug'            => $this->slug,
             'icon'            => $this->icon
                 ? asset($this->icon)
