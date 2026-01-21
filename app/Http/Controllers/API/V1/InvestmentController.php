@@ -6,6 +6,7 @@ use App\Enum\Investment\Status;
 use App\Enum\Wallet\TransactionSource;
 use App\Enum\Wallet\TransactionStatus;
 use App\Enum\Wallet\TransactionType;
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Investment\getInvestmentRequest;
 use App\Http\Requests\Api\V1\Investment\InvestNowRequest;
@@ -30,6 +31,7 @@ class InvestmentController extends Controller
      */
     public function investNow(InvestNowRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         DB::beginTransaction();
         try {
             $validated = $request->validated();
@@ -39,7 +41,13 @@ class InvestmentController extends Controller
             $package = Package::with('level')->findOrFail($validated['package_id']);
 
             if ($user->wallet->balance < $package->price) {
-                return $this->sendError('Insufficient wallet balance',[],422);
+                $message = translateHelper::translateCached(
+                    'wallet_insufficient_balance',
+                    'Insufficient wallet balance.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 422);
             }
 
             DB::transaction(function () use ($user, $admin, $package) {
@@ -83,14 +91,27 @@ class InvestmentController extends Controller
             });
 
             DB::commit();
-            return $this->sendResponse([], 'Investment started successfully');
+            $message = translateHelper::translateCached(
+                'investment_started_success',
+                'Investment started successfully.',
+                $lang
+            );
+
+            return $this->sendResponse([], $message);
         }catch (\Exception $e){
             DB::rollBack();
             Log::error('Investment start failed ', [
                 'user_id' => auth()->user()->id,
                 'exception' => $e->getMessage()
             ]);
-            return $this->sendError('Failed to start investment:'.$e->getMessage(), [], 500);
+
+            $message = translateHelper::translateCached(
+                'investment_start_failed',
+                'Failed to start investment.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 
@@ -99,6 +120,8 @@ class InvestmentController extends Controller
      */
     public function myInvestments(getInvestmentRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
+
         try {
             $validated = $request->validated();
             $page      = $validated['page'] ?? 1;
@@ -108,27 +131,46 @@ class InvestmentController extends Controller
                 ->where('user_id', auth()->id())
                 ->latest()->paginate($perPage);
 
-            return $this->sendResponse(getInvestmentResource::collection($investments), 'My investments retrieved successfully',200,[],$investments);
+            $message = translateHelper::translateCached(
+                'investment_list_success',
+                'My investments retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse( getInvestmentResource::collection($investments),$message, 200, [], $investments);
         }catch (\Exception $e){
             Log::error('Investment list failed ', [
                 'user_id' => auth()->user()->id,
                 'exception' => $e->getMessage()
             ]);
-            return $this->sendError('Failed to list investments.', [], 500);
+            $message = translateHelper::translateCached(
+                'investment_list_failed',
+                'Failed to list investments.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 
     /**
      * investment Summary
      */
-    public function investmentSummary()
+    public function investmentSummary(Request $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $userId = auth()->id();
 
             if (auth()->user()->role->value !== 'user')
             {
-                return $this->sendError('You do not have permission to view investment summary',[],403);
+                $message = translateHelper::translateCached(
+                    'investment_summary_permission_denied',
+                    'You do not have permission to view investment summary.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 403);
             }
 
             //Total Invested
@@ -171,7 +213,14 @@ class InvestmentController extends Controller
                 'next_return'    => $nextReturn,
             ];
 
-            return $this->sendResponse($data, 'Investment summary retrieved successfully');
+
+            $message = translateHelper::translateCached(
+                'investment_summary_success',
+                'Investment summary retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse($data, $message);
 
         } catch (\Exception $e) {
             Log::error('Investment summary error', [
@@ -179,7 +228,13 @@ class InvestmentController extends Controller
                 'error' => $e->getMessage()
             ]);
 
-            return $this->sendError(   'Failed to retrieve investment summary', [],500);
+            $message = translateHelper::translateCached(
+                'investment_summary_failed',
+                'Failed to retrieve investment summary.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 }

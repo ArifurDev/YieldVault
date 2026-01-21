@@ -69,7 +69,7 @@ class LevelController extends Controller
                     'current_level'     => $currentLevel ? [
                         'id'        => $currentLevel->id,
                         'name'      => $currentLevel->name ?  translateHelper::translateCached(
-                            'task_title_' . md5($currentLevel->id),
+                            'level_name_' . md5($currentLevel->id),
                             $currentLevel->name,
                             $lang
                         ) : null,
@@ -80,7 +80,7 @@ class LevelController extends Controller
                     'next_level' => $nextLevel ? [
                         'id'          => $nextLevel->id,
                         'name'        => $nextLevel->name ?  translateHelper::translateCached(
-                            'task_title_' . md5($nextLevel->id),
+                            'level_name_' . md5($nextLevel->id),
                             $nextLevel->name,
                             $lang
                         ) : null,
@@ -173,14 +173,22 @@ class LevelController extends Controller
                     'current_xp'        => $userXp,
                     'current_level'     => $currentLevel ? [
                         'id'        => $currentLevel->id,
-                        'name'      => $currentLevel->name,
+                        'name'      => $currentLevel->name ?  translateHelper::translateCached(
+                            'level_name_' . md5($currentLevel->id),
+                            $currentLevel->name,
+                            $lang
+                        ) : null,
                         'daily_roi' => $currentLevel->daily_roi,
                         'icon'      => asset($currentLevel->icon),
                     ] : null,
 
                     'next_level' => $nextLevel ? [
                         'id'          => $nextLevel->id,
-                        'name'        => $nextLevel->name,
+                        'name'        => $nextLevel->name ?  translateHelper::translateCached(
+                            'level_name_' . md5($nextLevel->id),
+                            $nextLevel->name,
+                            $lang
+                        ) : null,
                         'required_xp' => $nextLevel->required_xp,
                     ] : null,
 

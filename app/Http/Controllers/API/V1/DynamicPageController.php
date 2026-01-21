@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\DynamicPage\DetailsResource;
 use App\Models\DynamicPage;
@@ -15,29 +16,75 @@ class DynamicPageController extends Controller
     /**
      * get dynamic page title
      */
-    public function getTitle()
+    public function getTitle(Request $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
-            $dynamicPages = DynamicPage::select('title','slug')->get();
-            return $this->sendResponse($dynamicPages,'Dynamic Pages list retrieved successfully');
+
+            $pages = DynamicPage::select('id', 'title', 'slug')->get();
+
+            $data = $pages->map(function ($page) use ($lang) {
+
+                return [
+                    'title' => translateHelper::translateCached(
+                        'dynamic_page_title_' . md5($page->slug),
+                        $page->title,
+                        $lang
+                    ),
+                    'slug'  => $page->slug,
+                ];
+            });
+            $message = translateHelper::translateCached(
+                'dynamic_pages_list_success',
+                'Dynamic pages list retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse($data, $message);
         }catch (\Exception $exception){
-            return $this->sendError("Failed to retrieve Dynamic Pages list:".$exception->getMessage(),[],500);
+            $message = translateHelper::translateCached(
+                'dynamic_pages_list_failed',
+                'Failed to retrieve dynamic pages list.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 
     /**
      * get dynamic page details
      */
-    public function getDetails($slug)
+    public function getDetails(Request $request,$slug)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $dynamicPage = DynamicPage::where('slug',$slug)->first();
             if (!$dynamicPage){
-                return $this->sendError('Dynamic Page not found');
+                $message = translateHelper::translateCached(
+                    'dynamic_page_not_found',
+                    'Dynamic page not found.',
+                    $lang
+                );
+
+                return $this->sendError($message);
             }
-            return $this->sendResponse(new DetailsResource($dynamicPage),'Dynamic Page retrieved successfully');
+
+            $message = translateHelper::translateCached(
+                'dynamic_page_details_success',
+                'Dynamic page retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse( new DetailsResource($dynamicPage),$message);
         }catch (\Exception $exception){
-            return $this->sendError("Failed to retrieve Dynamic Page:".$exception->getMessage(),[],500);
+            $message = translateHelper::translateCached(
+                'dynamic_page_details_failed',
+                'Failed to retrieve dynamic page.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 }

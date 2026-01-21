@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Package\FilterRequest;
 use App\Http\Resources\Api\V1\Package\getPackageResource;
@@ -18,6 +19,7 @@ class PackageController extends Controller
      */
     public function getPackages(FilterRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $filter = $request->query('filter'); // lock | unlock | null
 
@@ -41,13 +43,24 @@ class PackageController extends Controller
                 $data = collect($data)->where('is_unlocked', true)->values();
             }
 
-            return $this->sendResponse($data, 'Packages retrieved successfully.');
+            $message = translateHelper::translateCached(
+                'packages_retrieved_success',
+                'Packages retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse($data, $message);
 
         } catch (\Exception $e) {
             Log::error("Failed to retrieve packages: " . $e->getMessage());
 
-            return $this->sendError("Failed to retrieve packages", [], 500
+            $message = translateHelper::translateCached(
+                'packages_retrieved_failed',
+                'Failed to retrieve packages. Please try again later.',
+                $lang
             );
+
+            return $this->sendError($message, [], 500);
         }
     }
 

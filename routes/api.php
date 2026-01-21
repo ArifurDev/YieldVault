@@ -70,14 +70,12 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
         Route::post('/verify', 'verifyTwoFactor');
     });
 
-
     /**
      * Auth Referral
      */
     Route::prefix('v1/auth/ref')->controller(AuthUserReferralController::class)->group(function () {
         Route::get('/', 'index');
     });
-
 
     /**
      * kyc -submit
@@ -191,8 +189,6 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
         });
 
     });
-
-
 
     /**
      * Firebase Token Module

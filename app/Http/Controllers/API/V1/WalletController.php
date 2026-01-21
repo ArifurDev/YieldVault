@@ -6,6 +6,7 @@ use App\Enum\Wallet\TransactionSource;
 use App\Enum\Wallet\TransactionStatus;
 use App\Enum\Wallet\TransactionType;
 use App\Helpers\helpers;
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Wallet\depositRequest;
 use App\Http\Requests\Api\V1\Wallet\getFilterDataRequest;
@@ -34,8 +35,9 @@ class WalletController extends Controller
     /**
      * User Dashboard Quick Summary
      */
-    public function summary()
+    public function summary(Request $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $user = auth()->user();
             $today = now()->format('Y-m-d');
@@ -84,10 +86,22 @@ class WalletController extends Controller
                 ]
             ];
 
-            return $this->sendResponse($data, 'Dashboard summary retrieved successfully');
+            $message = translateHelper::translateCached(
+                'dashboard_summary_success',
+                'Dashboard summary retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse($data, $message);
 
         } catch (\Exception $e) {
-            return $this->sendError('Failed to load dashboard summary', [], 500);
+            $message = translateHelper::translateCached(
+                'dashboard_summary_failed',
+                'Failed to load dashboard summary.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 
@@ -133,8 +147,9 @@ class WalletController extends Controller
     /**
      * My wallet
      */
-    public function getWallet()
+    public function getWallet(Request $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $user = auth()->user();
 
@@ -162,6 +177,11 @@ class WalletController extends Controller
                 ->sum('amount');
 
             // custom response
+
+            $labelText = $walletAccount->label
+                ?? $walletAccount->bank_name
+                ?? 'Wallet Account';
+
             $data = [
                 'balance' => number_format($wallet?->balance ?? 0, 2),
                 'pending_withdraw' => number_format($pending_withdraw ?? 0, 2),
@@ -171,14 +191,26 @@ class WalletController extends Controller
                     : null,
                 'manager' => $manager ? [
                     'id' => $manager->id,
-                    'first_name' => $manager->first_name,
-                    'last_name' => $manager->last_name,
+                    'first_name' => $manager->first_name ? translateHelper::translateCached(
+                        'value_first_name_' . md5($manager->id),
+                        $manager->first_name,
+                        $lang
+                    ) : null,
+                    'last_name' => $manager->last_name ? translateHelper::translateCached(
+                        'value_last_name_' . md5($manager->id),
+                        $manager->last_name,
+                        $lang
+                    ) : null,
                     // generate manager assigned id (MNG-101)
                     'manager_assign_id' => 'MNG-' . str_pad($manager->id, 3, '0', STR_PAD_LEFT),
                     'wallet_account' => $walletAccount ? [
                         'id'             => $walletAccount->id, // What kind of wallet
                         'method'         => $walletAccount->type,// bank | bkash | nagad | rocket
-                        'label'          => $walletAccount->label ?? ($walletAccount->bank_name ?? 'Wallet Account'), // Human readable label
+                        'label'          => translateHelper::translateCached(
+                            'wallet_account_label_' . md5($labelText),
+                            $labelText,
+                            $lang
+                        ),
 
                         'account_number' => $walletAccount->account_number,// Common identifier (bank / mobile)
                         'provider'       => $walletAccount->network,// Only for mobile wallets (bkash/nagad), null for bank
@@ -188,14 +220,26 @@ class WalletController extends Controller
                 ] : null,
             ];
 
-            return $this->sendResponse($data, 'Wallet retrieved successfully');
+            $message = translateHelper::translateCached(
+                'wallet_retrieved_success',
+                'Wallet retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse($data, $message);
 
         } catch (\Exception $e) {
             Log::error("Failed to retrieve wallet filter data:", [
                 'userId' => $user->id,
                 'errorMessage' => $e->getMessage(),
             ]);
-            return $this->sendError( 'Failed to retrieve wallet information.',[], 500);
+            $message = translateHelper::translateCached(
+                'wallet_retrieved_failed',
+                'Failed to retrieve wallet information.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 
@@ -204,6 +248,7 @@ class WalletController extends Controller
      */
     public function getTransactions(getTransactionRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             // get current auth
             $user      = auth()->user();
@@ -247,13 +292,32 @@ class WalletController extends Controller
                 ->orderByDesc('created_at')
                 ->paginate($perPage);
 
-            return $this->sendResponse(getTransactionResource::collection($transactions),'Wallet transaction history retrieved successfully',200,[],$transactions);
+            $message = translateHelper::translateCached(
+                'wallet_transaction_history_success',
+                'Wallet transaction history retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse(
+                getTransactionResource::collection($transactions),
+                $message,
+                200,
+                [],
+                $transactions
+            );
         }catch (\Exception $e) {
             Log::error("Failed to retrieve transactions:", [
                 'userId' => $user->id,
                 'errorMessage' => $e->getMessage(),
             ]);
-            return $this->sendError("Failed to retrieve wallet transactions",[],500);
+
+            $errorMessage = translateHelper::translateCached(
+                'wallet_transaction_history_failed',
+                'Failed to retrieve wallet transactions.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\Notification\RecentNotificationResource;
 use App\Traits\ApiResponse;
@@ -16,8 +17,9 @@ class NotificationController extends Controller
     /**
      * list of notifications
      */
-    public function index()
+    public function index(Request $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             // Get the logged-in user
             $user = auth()->user();
@@ -31,8 +33,21 @@ class NotificationController extends Controller
             // Optionally, you can order them by created_at to show the most recent notifications first
             $notifications = $notifications->sortByDesc('created_at');
 
-            // Prepare the response
-            $message = $notifications->isEmpty() ? 'No recent notifications found.' : 'Recent notifications retrieved successfully.';
+            // Dynamic message
+            $messageKey = $notifications->isEmpty()
+                ? 'notifications_empty'
+                : 'notifications_list_success';
+
+            $messageText = $notifications->isEmpty()
+                ? 'No recent notifications found.'
+                : 'Recent notifications retrieved successfully.';
+
+            $message = translateHelper::translateCached(
+                $messageKey,
+                $messageText,
+                $lang
+            );
+
             $data = [
                 'has_unread_notifications' => $this->checkHasNewNotification(),
                 'notifications' => RecentNotificationResource::collection($notifications),
@@ -41,7 +56,13 @@ class NotificationController extends Controller
             return $this->sendResponse($data,$message);
         } catch (\Throwable $th) {
             //throw $th;
-            return $this->sendError('Failed to retrieve notifications.', $th->getMessage(), 500);
+            $message = translateHelper::translateCached(
+                'notifications_list_failed',
+                'Failed to retrieve notifications.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 

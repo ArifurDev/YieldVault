@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Package;
 
+use App\Helpers\translateHelper;
 use App\Models\DailyTaskLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,6 +17,7 @@ class getPackageResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $lang = $request->header('Accept-Language', 'en');
 //        return parent::toArray($request);
         // Default XP (later replace with auth()->user()->xp)
         $earnedXp   = DailyTaskLog::where('user_id',auth()->user()->id)->sum('xp_rewarded');
@@ -25,7 +27,11 @@ class getPackageResource extends JsonResource
 
         return [
             'id'   => $this->id,
-            'name' => $this->name,
+            'name' => $this->name ? translateHelper::translateCached(
+                'package_name_' . md5($this->id),
+                $this->name,
+                $lang
+            ) : null,
 
             // Investment info
             'investment'    => number_format($this->price, 2),
@@ -48,17 +54,34 @@ class getPackageResource extends JsonResource
             // Level info
             'level' => [
                 'id'          => $this->level->id,
-                'name'        => $this->level->name,
+                'name'        => $this->level->name ? translateHelper::translateCached(
+                    'level_name_' . md5($this->id),
+                    $this->name,
+                    $lang
+                ) : null,
+//                'slug'        => $this->level->slug
+//                    ? ucfirst(Str::before($this->level->slug, '-'))
+//                    : null,
                 'slug'        => $this->level->slug
-                    ? ucfirst(Str::before($this->level->slug, '-'))
-                    : null,
+                    ? translateHelper::translateCached(
+                        'level_name_' . $this->level->slug,
+                        ucfirst(Str::before($this->level->slug, '-')),
+                        $lang
+                    ) : null,
                 'required_xp' => (int) $requiredXp,
             ],
 
             // Lock reason (for UI)
+//            'lock_reason' => $isUnlocked
+//                ? null
+//                : "Unlock at {$this->level->name}",
             'lock_reason' => $isUnlocked
                 ? null
-                : "Unlock at {$this->level->name}",
+                : translateHelper::translateCached(
+                    'package_lock_reason_'. md5($this->level->id),
+                    "Unlock at {$this->level->name}",
+                    $lang
+                ),
         ];
 
     }
