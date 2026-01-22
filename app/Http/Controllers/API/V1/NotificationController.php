@@ -80,8 +80,9 @@ class NotificationController extends Controller
     /**
      * Read a single or all notifications based on the presence of an ID
      */
-    public function readNotifications($id = null)
+    public function readNotifications(Request $request,$id = null)
     {
+        $lang = $request->header('Accept-Language', 'en');
         $user = Auth::user();
 
         // If an ID is provided, mark the single notification as read
@@ -90,25 +91,46 @@ class NotificationController extends Controller
             $notification = $user->unreadNotifications()->find($id);
 
             if (!$notification) {
-                return $this->sendError('Notification not found or already read.',[], 404);
+                $message = translateHelper::translateCached(
+                    'notification_not_found_or_read',
+                    'Notification not found or already read.',
+                    $lang
+                );
+                return $this->sendError($message, [], 404);
             }
 
             // Mark the notification as read
             $notification->markAsRead();
+            $message = translateHelper::translateCached(
+                'notification_read_success',
+                'Notification read successfully.',
+                $lang
+            );
 
-            return $this->sendResponse([],'Notification read successfully.');
+            return $this->sendResponse([], $message);
         }
 
         // If no ID is provided, mark all unread notifications as read
         $unreadNotifications = $user->unreadNotifications;
 
         if ($unreadNotifications->isEmpty()) {
-            return $this->sendError('Notifications not found.', [],404);
+            $message = translateHelper::translateCached(
+                'notifications_not_found',
+                'Notifications not found.',
+                $lang
+            );
+            return $this->sendError($message, [], 404);
         }
 
         // Mark all unread notifications as read
         $unreadNotifications->markAsRead();
 
-        return $this->sendResponse([], 'Notifications read successfully.');
+        $message = translateHelper::translateCached(
+            'notifications_read_success',
+            'Notifications read successfully.',
+            $lang
+        );
+
+        return $this->sendResponse([], $message);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\V1\Manager\Deposit;
 
 use App\Helpers\helpers;
+use App\Helpers\translateHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,6 +17,7 @@ class DepositRequestDetailsResource extends JsonResource
     public function toArray(Request $request): array
     {
 //        return parent::toArray($request);
+        $lang = $request->header('Accept-Language', 'en');
         return [
             /* ================= Request Info ================= */
             'id'         => $this->id,
@@ -23,7 +25,11 @@ class DepositRequestDetailsResource extends JsonResource
 
             'amount'  => number_format($this->amount, 2),
             'status'  => $this->status,
-            'remarks' => $this->remarks,
+            'remarks' => $this->remarks ? translateHelper::translateCached(
+                'deposit_remarks_' . md5($this->id),
+                $this->remarks,
+                $lang
+            ) : null,
 
             'date_&_time' => [
                 'date' => $this->created_at->format('M d, Y'),
@@ -33,7 +39,7 @@ class DepositRequestDetailsResource extends JsonResource
             /* ================= User Info ================= */
             'user' => [
                 'id'     => $this->user->id,
-                'name'   => trim($this->user->first_name . ' ' . $this->user->last_name),
+                'name'   => translateHelper::translateUserName($this->user,$lang),
                 'avatar' => $this->user->avatar
                     ? helpers::generateTempURL(
                         $this->user->avatar,
@@ -53,7 +59,11 @@ class DepositRequestDetailsResource extends JsonResource
             /* ================= Timeline ================= */
             'activity_log' => [
                 [
-                    'label' => 'Deposit Requested',
+                    'label' => translateHelper::translateCached(
+                        'deposit_activity_requested',
+                        'Deposit Requested',
+                        $lang
+                    ),
                     'value' => $this->created_at->format('M d, Y h:i A'),
                 ],
             ],

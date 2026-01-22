@@ -107,5 +107,27 @@ class translateHelper
     }
 
 
+    public static function translateUserName($user, string $lang): string
+    {
+        if ($lang === 'en') {
+            return trim($user->first_name . ' ' . $user->last_name);
+        }
+
+        $firstName = translateHelper::translateCached(
+            'value_first_name_' . $user->id,
+            $user->first_name,
+            $lang
+        );
+
+        $lastName = translateHelper::translateCached(
+            'value_last_name_' . $user->id,
+            $user->last_name,
+            $lang
+        );
+
+        return trim($firstName . ' ' . $lastName);
+    }
+
+
 
 }

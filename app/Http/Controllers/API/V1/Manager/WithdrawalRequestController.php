@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API\V1\Manager;
 use App\Enum\Wallet\TransactionSource;
 use App\Enum\Wallet\TransactionStatus;
 use App\Enum\Wallet\TransactionType;
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Manager\Withdrawal\getWithdrawalRequest;
 use App\Http\Requests\Api\V1\Manager\Withdrawal\RejectRequest;
@@ -27,6 +28,7 @@ class WithdrawalRequestController extends Controller
      */
     public function index(getWithdrawalRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
             $page = $validated['page'] ?? 1;
@@ -36,7 +38,13 @@ class WithdrawalRequestController extends Controller
             $manager = auth()->user();
 
             if ($manager->role->value !== 'manager') {
-                return $this->sendError("You don't have permission to access this page.",[], 403);
+                $errorMessage = translateHelper::translateCached(
+                    'withdraw_permission_denied',
+                    "You don't have permission to access this page.",
+                    $lang
+                );
+
+                return $this->sendError($errorMessage, [], 403);
             }
 
             $withdrawal = WithdrawRequest::with('user')
@@ -44,50 +52,99 @@ class WithdrawalRequestController extends Controller
                 ->latest()
                 ->paginate($perPage, ['*'], 'page', $page);
 
-            return $this->sendResponse(getRequestResource::collection($withdrawal), 'Withdrawal request list retrieved successfully.',200,[],$withdrawal);
+            $successMessage = translateHelper::translateCached(
+                'withdraw_list_success',
+                'Withdrawal request list retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse(
+                getRequestResource::collection($withdrawal),
+                $successMessage,200, [], $withdrawal
+            );
         }catch (\Exception $e){
             Log::error('Failed to retrieve withdrawal requests', [
                 'manager_id' => auth()->id(),
                 'error'      => $e->getMessage(),
             ]);
 
-            return $this->sendError('Failed to retrieve withdrawal request list.', [],500);
+            $errorMessage = translateHelper::translateCached(
+                'withdraw_list_failed',
+                'Failed to retrieve withdrawal request list.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 
     /**
      * View withdrawal Request
      */
-    public function show($id)
+    public function show(Request $request,$id)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             // get current user
             $user = auth()->user();
 
             // Role check
             if ($user->role->value !== 'manager') {
-                return $this->sendError("You don't have permission to access this resource.", [],403);
+                $errorMessage = translateHelper::translateCached(
+                    'withdraw_permission_denied',
+                    "You don't have permission to access this resource.",
+                    $lang
+                );
+
+                return $this->sendError($errorMessage, [], 403);
             }
             $withdraw = WithdrawRequest::with('user')->where('manager_id', $user->id)->find($id);
             if (!$withdraw) {
-                return $this->sendError("Withdraw request not found.",[], 404);
+                $errorMessage = translateHelper::translateCached(
+                    'withdraw_request_not_found',
+                    'Withdraw request not found.',
+                    $lang
+                );
+
+                return $this->sendError($errorMessage, [], 404);
             }
             if($withdraw->manager_id !== $user->id){
-                return $this->sendError("You don't have permission to access this page.",[], 403);
+                $errorMessage = translateHelper::translateCached(
+                    'withdraw_access_denied',
+                    "You don't have permission to access this page.",
+                    $lang
+                );
+
+                return $this->sendError($errorMessage, [], 403);
             }
-            return $this->sendResponse( new getRequestDetailsResource($withdraw), 'Withdraw request details retrieved');
+            $successMessage = translateHelper::translateCached(
+                'withdraw_details_success',
+                'Withdraw request details retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse(
+                new getRequestDetailsResource($withdraw),
+                $successMessage
+            );
         }catch (\Exception $e){
             Log::error("Failed to get DepositRequest : ".$e->getMessage());
-            return $this->sendError("Failed to get DepositRequest.",[], 500);
+            $errorMessage = translateHelper::translateCached(
+                'withdraw_details_failed',
+                'Failed to retrieve withdraw request details.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
-
 
     /**
      * Manager – Approve Withdrawal Request
      */
-    public function approve($id)
+    public function approve(Request $request,$id)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $manager = auth()->user();
 
@@ -96,15 +153,30 @@ class WithdrawalRequestController extends Controller
                 ->find($id);
 
             if (!$withdrawal) {
-                return $this->sendError('Withdrawal request not found.', [], 404);
+                $message = translateHelper::translateCached(
+                    'withdraw_request_not_found',
+                    'Withdrawal request not found.',
+                    $lang
+                );
+                return $this->sendError($message, [], 404);
             }
 
             if($withdrawal->manager_id !== $manager->id){
-                return $this->sendError("You don't have permission to access this page.",[], 403);
+                $message = translateHelper::translateCached(
+                    'withdraw_permission_denied',
+                    "You don't have permission to access this page.",
+                    $lang
+                );
+                return $this->sendError($message, [], 403);
             }
 
             if ($withdrawal->status !== TransactionStatus::PENDING->value) {
-                return $this->sendError('Withdrawal already processed.', [], 422);
+                $message = translateHelper::translateCached(
+                    'withdraw_already_processed',
+                    'Withdrawal already processed.',
+                    $lang
+                );
+                return $this->sendError($message, [], 422);
             }
 
             // OPTIONAL EARLY BALANCE CHECK
@@ -112,46 +184,15 @@ class WithdrawalRequestController extends Controller
             $wallet = $user->wallet;
 
             if (!$wallet || $wallet->balance < $withdrawal->amount) {
-                return $this->sendError("User does not have sufficient balance for this withdrawal.", [], 422);
-            }
-//            DB::transaction(function () use ($withdrawal, $manager) {
-//
-//                $user = $withdrawal->user;
-//
-//                // Ensure wallets exist
-//                $userWallet = $user->wallet()->firstOrCreate(['user_id' => $user->id]);
-//                $managerWallet = $manager->wallet()->firstOrCreate(['user_id' => $manager->id]);
-//
-//                // FINAL BALANCE CHECK
-//                if ($userWallet->balance < $withdrawal->amount) {
-//                    throw new \Exception('Insufficient wallet balance.');
-//                }
-//
-//                // USER wallet DEBIT
-//                $userWallet->decrement('balance', $withdrawal->amount);
-//
-//                // MANAGER wallet CREDIT (cash/bank settlement)
-//                $managerWallet->increment('balance', $withdrawal->amount);
-//
-//                // Ledger entry
-//                WalletTransaction::create([
-//                    'from_user_id' => $user->id,
-//                    'to_user_id'   => $manager->id,
-//                    'amount'       => $withdrawal->amount,
-//                    'type'         => TransactionType::DEBIT->value,
-//                    'source'       => TransactionSource::WITHDRAW->value,
-//                    'status'       => TransactionStatus::APPROVED->value,
-//                    'reference_id' => $withdrawal->id,
-//                ]);
-//
-//                // Update withdrawal status
-//                $withdrawal->update([
-//                    'status' => TransactionStatus::APPROVED->value,
-//                ]);
-//            });
+                $message = translateHelper::translateCached(
+                    'withdraw_insufficient_balance',
+                    'User does not have sufficient balance for this withdrawal.',
+                    $lang
+                );
+                return $this->sendError($message, [], 422);            }
 
             /* ================= TRANSACTION WITH LOCK ================= */
-            DB::transaction(function () use ($id, $manager) {
+            DB::transaction(function () use ($id, $manager,$lang) {
 
                 // LOCK withdrawal row
                 $withdrawal = WithdrawRequest::where('id', $id)
@@ -160,7 +201,13 @@ class WithdrawalRequestController extends Controller
 
                 // Double safety check after lock
                 if ($withdrawal->status !== TransactionStatus::PENDING->value) {
-                    throw new \Exception('Withdrawal already processed.');
+                    throw new \RuntimeException(
+                        translateHelper::translateCached(
+                            'withdraw_already_processed',
+                            'Withdrawal already processed.',
+                            $lang
+                        )
+                    );
                 }
 
                 // LOCK user wallet
@@ -174,7 +221,13 @@ class WithdrawalRequestController extends Controller
 
                 // FINAL BALANCE CHECK
                 if ($userWallet->balance < $withdrawal->amount) {
-                    throw new \Exception('Insufficient wallet balance.');
+                    throw new \RuntimeException(
+                        translateHelper::translateCached(
+                            'withdraw_insufficient_balance',
+                            'Insufficient wallet balance.',
+                            $lang
+                        )
+                    );
                 }
 
                 // USER wallet DEBIT
@@ -209,7 +262,13 @@ class WithdrawalRequestController extends Controller
                 )
             );
 
-            return $this->sendResponse([], 'Withdrawal approved successfully');
+            $successMessage = translateHelper::translateCached(
+                'withdraw_approved_success',
+                'Withdrawal approved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse([], $successMessage);
 
         } catch (\Exception $e) {
             Log::error('Withdraw approve failed', [
@@ -217,7 +276,13 @@ class WithdrawalRequestController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->sendError('Failed to approve withdrawal', [], 500);
+            $errorMessage = translateHelper::translateCached(
+                'withdraw_approve_failed',
+                'Failed to approve withdrawal.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 
@@ -226,6 +291,7 @@ class WithdrawalRequestController extends Controller
      */
     public function reject(RejectRequest $request, $id)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
 
@@ -236,15 +302,29 @@ class WithdrawalRequestController extends Controller
                 ->find($id);
 
             if (!$withdrawal) {
-                return $this->sendError('Withdrawal request not found.', [], 404);
-            }
+                $message = translateHelper::translateCached(
+                    'withdraw_request_not_found',
+                    'Withdrawal request not found.',
+                    $lang
+                );
+                return $this->sendError($message, [], 404);            }
 
             if($withdrawal->manager_id !== $manager->id){
-                return $this->sendError("You don't have permission to access this page.",[], 403);
+                $message = translateHelper::translateCached(
+                    'withdraw_permission_denied',
+                    "You don't have permission to access this page.",
+                    $lang
+                );
+                return $this->sendError($message, [], 403);
             }
 
             if ($withdrawal->status !== TransactionStatus::PENDING->value) {
-                return $this->sendError('Withdrawal already processed.', [], 422);
+                $message = translateHelper::translateCached(
+                    'withdraw_already_processed',
+                    'Withdrawal already processed.',
+                    $lang
+                );
+                return $this->sendError($message, [], 422);
             }
 
             $withdrawal->update([
@@ -262,106 +342,37 @@ class WithdrawalRequestController extends Controller
                 )
             );
 
-            return $this->sendResponse([], 'Withdrawal rejected successfully');
+            $successMessage = translateHelper::translateCached(
+                'withdraw_rejected_success',
+                'Withdrawal rejected successfully.',
+                $lang
+            );
+
+            return $this->sendResponse([], $successMessage);
         } catch (\Exception $e) {
             Log::error('Withdraw reject failed', [
                 'withdraw_id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->sendError('Failed to reject withdrawal', [], 500);
+
+            $errorMessage = translateHelper::translateCached(
+                'withdraw_reject_failed',
+                'Failed to reject withdrawal.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
-
-
-//    /**
-//     * Manager – Mark Withdrawal as Paid
-//     */
-//    public function markAsPaid($id)
-//    {
-//        try {
-//            $manager = auth()->user();
-//
-//            $withdrawal = WithdrawRequest::with('user')
-//                ->where('manager_id', $manager->id)
-//                ->find($id);
-//
-//            if (!$withdrawal) {
-//                return $this->sendError('Withdrawal request not found.', [], 404);
-//            }
-//            if($withdrawal->manager_id !== $manager->id){
-//                return $this->sendError("You don't have permission to access this page.",[], 403);
-//            }
-//
-//            if ($withdrawal->status !== TransactionStatus::APPROVED->value) {
-//                return $this->sendError('Withdrawal not approved yet.', [], 422);
-//            }
-//
-//            DB::transaction(function () use ($withdrawal, $manager) {
-//
-//                $user = $withdrawal->user;
-//
-//                // Ensure wallets exist
-//                $userWallet = $user->wallet()->firstOrCreate(['user_id' => $user->id]);
-//                $managerWallet = $manager->wallet()->firstOrCreate(['user_id' => $manager->id]);
-//
-//                // Check user balance
-//                if ($userWallet->balance < $withdrawal->amount) {
-//                    throw new \Exception('User has insufficient balance.');
-//                }
-//
-//                // USER wallet DEBIT
-//                $userWallet->decrement('balance', $withdrawal->amount);
-//
-//                // MANAGER wallet CREDIT (cash/bank settlement)
-//                $managerWallet->increment('balance', $withdrawal->amount);
-//
-//                // Ledger entry
-//                WalletTransaction::create([
-//                    'from_user_id' => $user->id,
-//                    'to_user_id'   => $manager->id,
-//                    'amount'       => $withdrawal->amount,
-//                    'type'         => TransactionType::DEBIT->value,
-//                    'source'       => TransactionSource::WITHDRAW->value,
-//                    'status'       => TransactionStatus::APPROVED->value,
-//                    'reference_id' => $withdrawal->id,
-//                ]);
-//
-//                // Update withdrawal status
-//                $withdrawal->update([
-//                    'status' => TransactionStatus::PAID->value,
-//                ]);
-//            });
-//
-//            // Notify user
-//            $withdrawal->user->notify(
-//                new UniversalNotification(
-//                    'Withdrawal Paid',
-//                    "Your withdrawal of {$withdrawal->amount} has been successfully paid.",
-//                    'success',
-//                    ['withdrawal_id' => $withdrawal->id]
-//                )
-//            );
-//
-//            return $this->sendResponse([], 'Withdrawal marked as paid');
-//
-//        } catch (\Exception $e) {
-//            Log::error('Withdraw mark as paid failed', [
-//                'withdraw_id' => $id,
-//                'error' => $e->getMessage(),
-//            ]);
-//
-//            return $this->sendError('Failed to mark withdrawal as paid', [], 500);
-//        }
-//    }
-//
 
     /**
      * Manager – Mark Withdrawal as Paid
      * Mark as Paid = Payment Confirmation
      */
-    public function markAsPaid($id)
+    public function markAsPaid(Request $request,$id)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $manager = auth()->user();
 
@@ -371,22 +382,33 @@ class WithdrawalRequestController extends Controller
                 ->find($id);
 
             if (!$withdrawal) {
-                return $this->sendError('Withdrawal request not found.', [], 404);
+                $message = translateHelper::translateCached(
+                    'withdraw_request_not_found',
+                    'Withdrawal request not found.',
+                    $lang
+                );
+                return $this->sendError($message, [], 404);
             }
 
             if ($withdrawal->manager_id !== $manager->id) {
-                return $this->sendError("You don't have permission to access this page.", [], 403);
+                $message = translateHelper::translateCached(
+                    'withdraw_permission_denied',
+                    "You don't have permission to access this page.",
+                    $lang
+                );
+                return $this->sendError($message, [], 403);
             }
 
             if ($withdrawal->status !== TransactionStatus::APPROVED->value) {
-                return $this->sendError(
+                $message = translateHelper::translateCached(
+                    'withdraw_not_approved',
                     'Withdrawal must be approved before marking as paid.',
-                    [],
-                    422
+                    $lang
                 );
+                return $this->sendError($message, [], 422);
             }
 
-            DB::transaction(function () use ($id) {
+            DB::transaction(function () use ($id,$lang) {
 
                 // Lock withdrawal row (prevent double paid)
                 $withdrawal = WithdrawRequest::where('id', $id)
@@ -394,7 +416,13 @@ class WithdrawalRequestController extends Controller
                     ->first();
 
                 if ($withdrawal->status !== TransactionStatus::APPROVED->value) {
-                    throw new \Exception('Withdrawal already processed.');
+                    throw new \RuntimeException(
+                        translateHelper::translateCached(
+                            'withdraw_already_processed',
+                            'Withdrawal already processed.',
+                            $lang
+                        )
+                    );
                 }
 
                 // Only status update
@@ -419,20 +447,27 @@ class WithdrawalRequestController extends Controller
                 )
             );
 
-            return $this->sendResponse([], 'Withdrawal marked as paid successfully');
+            $successMessage = translateHelper::translateCached(
+                'withdraw_mark_paid_success',
+                'Withdrawal marked as paid successfully.',
+                $lang
+            );
+
+            return $this->sendResponse([], $successMessage);
 
         } catch (\Exception $e) {
-
             Log::error('Withdraw mark as paid failed', [
                 'withdraw_id' => $id,
                 'error'       => $e->getMessage(),
             ]);
 
-            return $this->sendError(
-                "Failed to mark withdrawal as paid:". $e->getMessage(),
-                [],
-                422
+            $errorMessage = translateHelper::translateCached(
+                'withdraw_mark_paid_failed',
+                'Failed to mark withdrawal as paid.',
+                $lang
             );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 

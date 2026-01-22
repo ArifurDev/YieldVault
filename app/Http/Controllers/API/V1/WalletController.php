@@ -327,6 +327,7 @@ class WalletController extends Controller
      */
     public function depositRequest(depositRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
             // get current auth
@@ -334,14 +335,24 @@ class WalletController extends Controller
 
             // check and manager is assigned or not
             if (!$user->manager_id) {
-                return $this->sendError('Manager not assigned', [], 422);
+                $message = translateHelper::translateCached(
+                    'deposit_manager_not_assigned',
+                    'Manager not assigned.',
+                    $lang
+                );
+                return $this->sendError($message, [], 422);
             }
 
             // Get manager
             $manager = User::find($user->manager_id);
 
             if (!$manager) {
-                return $this->sendError('Manager not found', [], 404);
+                $message = translateHelper::translateCached(
+                    'deposit_manager_not_found',
+                    'Manager not found.',
+                    $lang
+                );
+                return $this->sendError($message, [], 404);
             }
 
             // Get active manager wallet account
@@ -350,7 +361,12 @@ class WalletController extends Controller
                 ->first();
 
             if (!$walletAccount) {
-                return $this->sendError('Manager does not have an active wallet account.', [], 422);
+                $message = translateHelper::translateCached(
+                    'deposit_manager_wallet_missing',
+                    'Manager does not have an active wallet account.',
+                    $lang
+                );
+                return $this->sendError($message, [], 422);
             }
 
             $imagePaths = null;
@@ -399,13 +415,28 @@ class WalletController extends Controller
                 );
             }
 
-            return $this->sendResponse( new DepositRequestResource($deposit), 'Deposit request submitted successfully');
+            $successMessage = translateHelper::translateCached(
+                'deposit_request_success',
+                'Deposit request submitted successfully.',
+                $lang
+            );
+
+            return $this->sendResponse(
+                new DepositRequestResource($deposit),
+                $successMessage
+            );
         }catch (\Exception $e) {
             Log::error('Deposit request failed', [
                 'user_id' => auth()->id(),
                 'error'   => $e->getMessage(),
             ]);
-            return $this->sendError('Failed to submitted deposit request.',[],500);
+            $errorMessage = translateHelper::translateCached(
+                'deposit_request_failed',
+                'Failed to submit deposit request.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 
@@ -414,16 +445,27 @@ class WalletController extends Controller
      */
     public function withdrawRequest(withdrawRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
             $user = auth()->user();
 
             if (!$user->manager_id) {
-                return $this->sendError('Manager not assigned', [], 422);
+                $message = translateHelper::translateCached(
+                    'deposit_manager_not_assigned',
+                    'Manager not assigned.',
+                    $lang
+                );
+                return $this->sendError($message, [], 422);
             }
 
             if (($user->wallet?->balance ?? 0) < $validated['amount']) {
-                return $this->sendError('Insufficient wallet balance', [], 422);
+                $message = translateHelper::translateCached(
+                    'withdraw_insufficient_balance',
+                    'Insufficient wallet balance.',
+                    $lang
+                );
+                return $this->sendError($message, [], 422);
             }
 
             $withdraw = \App\Models\WithdrawRequest::create([
@@ -452,13 +494,28 @@ class WalletController extends Controller
                 );
             }
 
-            return $this->sendResponse(new WithdrawRequestResource($withdraw), 'Withdraw request submitted successfully');
+            $successMessage = translateHelper::translateCached(
+                'withdraw_request_success',
+                'Withdraw request submitted successfully.',
+                $lang
+            );
+
+            return $this->sendResponse(
+                new WithdrawRequestResource($withdraw),
+                $successMessage
+            );
         }catch (\Exception $e) {
             Log::error('Deposit request failed', [
                 'user_id' => auth()->id(),
                 'error'   => $e->getMessage(),
             ]);
-            return $this->sendError('Failed to submitted Withdraw request.',[],500);
+            $errorMessage = translateHelper::translateCached(
+                'withdraw_request_failed',
+                'Failed to submit withdraw request.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 }

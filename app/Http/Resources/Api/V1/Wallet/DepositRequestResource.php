@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\V1\Wallet;
 
 use App\Helpers\helpers;
+use App\Helpers\translateHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,7 +21,7 @@ class DepositRequestResource extends JsonResource
             'id' => $this->id,
             'amount' => number_format($this->amount, 2),
             'status' => $this->status,
-            'remarks' => $this->remarks,
+            'remarks' => $this->remarks ,
             'proof_url' => $this->proof_path
                 ? helpers::generateTempURL($this->proof_path,config('app.file_system'))
                 : null,

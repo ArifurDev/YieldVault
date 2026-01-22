@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1\Manager;
 
 use App\Enum\Role;
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Manager\Wallet\StoreRequest;
 use App\Http\Requests\Api\V1\Manager\Wallet\UpdateRequest;
@@ -20,28 +21,50 @@ class WalletAccountController extends Controller
     /**
      * List wallet accounts
      */
-    public function index()
+    public function index(Request $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             // get current auth
             $user = auth()->user();
             if ($user->role->value !== Role::MANAGER->value)
             {
-                return $this->sendError("You don't have permission to access this page",[],403);
+                $message = translateHelper::translateCached(
+                    'wallet_account_permission_denied',
+                    "You don't have permission to access this page.",
+                    $lang
+                );
+
+                return $this->sendError($message, [], 403);
             }
 
             $accounts = WalletAccount::where('user_id', $user->id)
                 ->latest()
                 ->get();
 
-            return $this->sendResponse(getAccountResource::collection($accounts), 'Wallet accounts retrieved successfully');
+            $successMessage = translateHelper::translateCached(
+                'wallet_accounts_list_success',
+                'Wallet accounts retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse(
+                getAccountResource::collection($accounts),
+                $successMessage
+            );
         }catch (\Exception $e){
             Log::error("Failed to get accounts list",
             [
                 'user_id' => auth()->user()->id,
                 'error' => $e->getMessage()
             ]);
-            return $this->sendError("Failed to get accounts list",[],500);
+            $errorMessage = translateHelper::translateCached(
+                'wallet_accounts_list_failed',
+                'Failed to retrieve wallet accounts list.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 
@@ -50,6 +73,7 @@ class WalletAccountController extends Controller
      */
     public function store(StoreRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             //get current auth
             $user = auth()->user();
@@ -57,7 +81,13 @@ class WalletAccountController extends Controller
             $user = auth()->user();
 
             if ($user->role->value !== Role::MANAGER->value) {
-                return $this->sendError("You don't have permission to access this page", [], 403);
+                $message = translateHelper::translateCached(
+                    'wallet_account_permission_denied',
+                    "You don't have permission to access this page.",
+                    $lang
+                );
+
+                return $this->sendError($message, [], 403);
             }
 
             $validated = $request->validated();
@@ -81,13 +111,26 @@ class WalletAccountController extends Controller
                 ]);
             });
 
-            return $this->sendResponse([], 'Wallet account added successfully');
+
+            $successMessage = translateHelper::translateCached(
+                'wallet_account_create_success',
+                'Wallet account added successfully.',
+                $lang
+            );
+
+            return $this->sendResponse([], $successMessage);
         }catch (\Exception $e){
             Log::error("Failed to store account",[
                 'userId' => $user->id,
                 'message' => $e->getMessage(),
             ]);
-            return $this->sendError("Failed to store account",[],500);
+            $errorMessage = translateHelper::translateCached(
+                'wallet_account_create_failed',
+                'Failed to store wallet account.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 
@@ -96,11 +139,18 @@ class WalletAccountController extends Controller
      */
     public function update(UpdateRequest $request, WalletAccount $walletAccount)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $user = auth()->user();
 
             if ($user->role->value !== Role::MANAGER->value && $user->id !== $walletAccount->user_id) {
-                return $this->sendError("You don't have permission to access this page", [], 403);
+                $message = translateHelper::translateCached(
+                    'wallet_account_update_permission_denied',
+                    "You don't have permission to access this page.",
+                    $lang
+                );
+
+                return $this->sendError($message, [], 403);
             }
             $validated = $request->validated();
 
@@ -116,27 +166,46 @@ class WalletAccountController extends Controller
                 $walletAccount->update($validated);
             });
 
-            return $this->sendResponse([], 'Wallet account updated successfully');
+            $successMessage = translateHelper::translateCached(
+                'wallet_account_update_success',
+                'Wallet account updated successfully.',
+                $lang
+            );
+
+            return $this->sendResponse([], $successMessage);
         }catch (\Exception $e){
             Log::error("Failed to update account",[
                 'userId' => $user->id,
                 'message' => $e->getMessage(),
             ]);
-            return $this->sendError("Failed to update account",[],500);
+            $errorMessage = translateHelper::translateCached(
+                'wallet_account_update_failed',
+                'Failed to update wallet account.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 
     /**
      * Toggle active / inactive
      */
-    public function toggleStatus($id)
+    public function toggleStatus(Request $request,$id)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $user = auth()->user();
 
             $walletAccount = WalletAccount::find($id);
             if (!$walletAccount) {
-                return $this->sendError("Wallet account not found", [], 404);
+                $message = translateHelper::translateCached(
+                    'wallet_account_not_found',
+                    'Wallet account not found.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 404);
             }
 
             // permission check
@@ -144,7 +213,13 @@ class WalletAccountController extends Controller
                 $user->role->value !== Role::MANAGER->value &&
                 $user->id !== $walletAccount->user_id
             ) {
-                return $this->sendError("You don't have permission", [], 403);
+                $message = translateHelper::translateCached(
+                    'wallet_account_permission_denied',
+                    "You don't have permission to update this wallet account.",
+                    $lang
+                );
+
+                return $this->sendError($message, [], 403);
             }
 
             DB::transaction(function () use ($walletAccount) {
@@ -164,9 +239,15 @@ class WalletAccountController extends Controller
             // refresh model to get updated value
             $walletAccount->refresh();
 
+            $successMessage = translateHelper::translateCached(
+                'wallet_account_status_updated',
+                'Wallet account status updated successfully.',
+                $lang
+            );
+
             return $this->sendResponse([
-                'is_active' => $walletAccount->is_active
-            ], 'Wallet account status updated');
+                'is_active' => (bool) $walletAccount->is_active
+            ], $successMessage);
 
         } catch (\Exception $e) {
             Log::error("Failed to update account", [
@@ -174,7 +255,13 @@ class WalletAccountController extends Controller
                 'message' => $e->getMessage(),
             ]);
 
-            return $this->sendError("Failed to update account", [], 500);
+            $errorMessage = translateHelper::translateCached(
+                'wallet_account_status_update_failed',
+                'Failed to update wallet account status.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 
@@ -182,28 +269,53 @@ class WalletAccountController extends Controller
     /**
      * Delete wallet account
      */
-    public function destroy( $id)
+    public function destroy(Request $request, $id)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $user = auth()->user();
 
             $walletAccount  = WalletAccount::find($id);
             if(!$walletAccount){
-                return $this->sendError("Wallet account not found",[],404);
+                $message = translateHelper::translateCached(
+                    'wallet_account_not_found',
+                    'Wallet account not found.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 404);
             }
 
             if ($user->role->value !== Role::MANAGER->value && $user->id !== $walletAccount->user_id) {
-                return $this->sendError("You don't have permission to access this page", [], 403);
+                $message = translateHelper::translateCached(
+                    'wallet_account_permission_denied',
+                    "You don't have permission to delete this wallet account.",
+                    $lang
+                );
+
+                return $this->sendError($message, [], 403);
             }
             $walletAccount->delete();
 
-            return $this->sendResponse([], 'Wallet account deleted successfully');
+            $successMessage = translateHelper::translateCached(
+                'wallet_account_deleted_success',
+                'Wallet account deleted successfully.',
+                $lang
+            );
+
+            return $this->sendResponse([], $successMessage);
         }catch (\Exception $e){
             Log::error("Failed to delete account",[
                 'userId' => $user->id,
                 'message' => $e->getMessage(),
             ]);
-            return $this->sendError("Failed to delete account",[],500);
+            $errorMessage = translateHelper::translateCached(
+                'wallet_account_delete_failed',
+                'Failed to delete wallet account.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 }

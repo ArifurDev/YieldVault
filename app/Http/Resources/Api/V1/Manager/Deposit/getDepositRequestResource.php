@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\V1\Manager\Deposit;
 
 use App\Helpers\helpers;
+use App\Helpers\translateHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,6 +17,7 @@ class getDepositRequestResource extends JsonResource
     public function toArray(Request $request): array
     {
 //        return parent::toArray($request);
+        $lang = $request->header('Accept-Language', 'en');
         return [
             // Request info
             'id'          => $this->id,
@@ -27,7 +29,7 @@ class getDepositRequestResource extends JsonResource
             // User info
             'user' => [
                 'id'            => $this->user->id,
-                'name'          => trim($this->user->first_name . ' ' . $this->user->last_name),
+                'name'          => translateHelper::translateUserName($this->user,$lang),
                 'avatar'        => $this->user->avatar
                     ? helpers::generateTempURL($this->user->avatar,config('app.file_system'))
                     : null,

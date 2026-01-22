@@ -415,14 +415,28 @@ class KycController extends Controller
                 return $this->sendError($message, [], 404);
             }
 
-            // message
             $message = match ($validated['status']) {
-                'approved' => 'KYC document approved successfully.',
-                'rejected' => 'KYC document rejected successfully.',
-                default => 'KYC document updated successfully.',
+                'approved' => translateHelper::translateCached(
+                    'kyc_approved_success',
+                    'KYC document approved successfully.',
+                    $lang
+                ),
+
+                'rejected' => translateHelper::translateCached(
+                    'kyc_rejected_success',
+                    'KYC document rejected successfully.',
+                    $lang
+                ),
+
+                default => translateHelper::translateCached(
+                    'kyc_updated_success',
+                    'KYC document updated successfully.',
+                    $lang
+                ),
             };
 
-            DB::transaction(function () use ($validated, $documentId, $user, &$document) {
+
+            DB::transaction(function () use ($validated, $documentId, $user, &$document,$lang) {
                 // Lock row to prevent double review
                 $document = KycDocument::with('user')
                     ->where('id', $documentId)
@@ -479,7 +493,13 @@ class KycController extends Controller
             return $this->sendResponse([], $message);
         } catch (\Exception $e) {
             Log::error("Failed to update document status:" . $e->getMessage());
-            return $this->sendError("Failed to update document status:" . $e->getMessage(), [], 500);
+            $message = translateHelper::translateCached(
+                'kyc_update_failed',
+                'Failed to update document status. Please try again later.',
+                $lang
+            );
+
+            return $this->sendError($message, [], 500);
         }
     }
 }

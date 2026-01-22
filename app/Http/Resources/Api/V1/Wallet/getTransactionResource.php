@@ -36,14 +36,14 @@ class getTransactionResource extends JsonResource
 
             'from'   => $this->fromUser ? [
                     'id'   => $this->fromUser->id,
-                    'name' => $this->translateUserName($this->fromUser, $lang),
+                    'name' => translateHelper::translateUserName($this->fromUser, $lang),
                     'role' => $this->fromUser->role,
                 ]
                 : null,
 
             'to' => $this->toUser ? [
                     'id'   => $this->toUser->id,
-                    'name' => $this->translateUserName($this->toUser, $lang),
+                    'name' => translateHelper::translateUserName($this->toUser, $lang),
                     'role' => $this->toUser->role,
                 ]
                 : null,
@@ -51,28 +51,6 @@ class getTransactionResource extends JsonResource
             'datetime' => $this->created_at->toDateTimeString(),
         ];
     }
-
-    protected function translateUserName($user, string $lang): string
-    {
-        if ($lang === 'en') {
-            return trim($user->first_name . ' ' . $user->last_name);
-        }
-
-        $firstName = translateHelper::translateCached(
-            'value_first_name_' . $user->id,
-            $user->first_name,
-            $lang
-        );
-
-        $lastName = translateHelper::translateCached(
-            'value_last_name_' . $user->id,
-            $user->last_name,
-            $lang
-        );
-
-        return trim($firstName . ' ' . $lastName);
-    }
-
 
     /**
      * Build transaction note

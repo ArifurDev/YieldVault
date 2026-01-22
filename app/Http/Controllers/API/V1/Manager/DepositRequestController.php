@@ -8,6 +8,7 @@ use App\Enum\ActivityLog\Type;
 use App\Enum\Wallet\TransactionSource;
 use App\Enum\Wallet\TransactionStatus;
 use App\Enum\Wallet\TransactionType;
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Manager\Deposit\getDepositRequest;
 use App\Http\Requests\Api\V1\Manager\Deposit\RejectRequest;
@@ -18,6 +19,7 @@ use App\Models\DepositRequest;
 use App\Models\WalletTransaction;
 use App\Notifications\UniversalNotification;
 use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -30,6 +32,7 @@ class DepositRequestController extends Controller
      */
     public function index(getDepositRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
             $page = $validated['page'] ?? 1;
@@ -39,7 +42,13 @@ class DepositRequestController extends Controller
             $manager = auth()->user();
 
             if ($manager->role->value !== 'manager') {
-                return $this->sendError("You don't have permission to access this page.",[], 403);
+                $message = translateHelper::translateCached(
+                    'deposit_permission_denied',
+                    "You don't have permission to access this page.",
+                    $lang
+                );
+
+                return $this->sendError($message, [], 403);
             }
 
             $deposits = DepositRequest::with('user')
@@ -47,110 +56,98 @@ class DepositRequestController extends Controller
                 ->latest()
                 ->paginate($perPage, ['*'], 'page', $page);
 
-            return $this->sendResponse(getDepositRequestResource::collection($deposits), 'Deposit request list retrieved successfully.',200,[],$deposits);
-        }catch (\Exception $e){
-            Log::error("Failed to get DepositRequest list : ".$e->getMessage());
-            return $this->sendError("Failed to get DepositRequest list.",[], 500);
+            $successMessage = translateHelper::translateCached(
+                'deposit_list_success',
+                'Deposit request list retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse(
+                getDepositRequestResource::collection($deposits),
+                $successMessage,
+                200,
+                [],
+                $deposits
+            );
+        } catch (\Exception $e) {
+            Log::error("Failed to get DepositRequest list : " . $e->getMessage());
+            $errorMessage = translateHelper::translateCached(
+                'deposit_list_failed',
+                'Failed to get deposit request list.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 
     /**
      * View Deposit Request
      */
-    public function show($id)
+    public function show(Request $request ,$id)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             // get current user
             $user = auth()->user();
 
             // Role check
             if ($user->role->value !== 'manager') {
-                return $this->sendError("You don't have permission to access this resource.", [],403);
+                $message = translateHelper::translateCached(
+                    'deposit_view_permission_denied',
+                    "You don't have permission to access this resource.",
+                    $lang
+                );
+
+                return $this->sendError($message, [], 403);
             }
             $deposit = DepositRequest::with('user')->where('manager_id', $user->id)->find($id);
             if (!$deposit) {
-                return $this->sendError("Deposit request not found.",[], 404);
+                $message = translateHelper::translateCached(
+                    'deposit_not_found',
+                    'Deposit request not found.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 404);
             }
-            if($deposit->manager_id !== $user->id){
-                return $this->sendError("You don't have permission to access this page.",[], 403);
+            if ($deposit->manager_id !== $user->id) {
+                $message = translateHelper::translateCached(
+                    'deposit_view_permission_denied',
+                    "You don't have permission to access this page.",
+                    $lang
+                );
+
+                return $this->sendError($message, [], 403);
             }
-            return $this->sendResponse( new DepositRequestDetailsResource($deposit), 'Deposit request details retrieved');
-        }catch (\Exception $e){
-            Log::error("Failed to get DepositRequest : ".$e->getMessage());
-            return $this->sendError("Failed to get DepositRequest.",[], 500);
+            $successMessage = translateHelper::translateCached(
+                'deposit_details_success',
+                'Deposit request details retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse(
+                new DepositRequestDetailsResource($deposit),
+                $successMessage
+            );
+        } catch (\Exception $e) {
+            Log::error("Failed to get DepositRequest : " . $e->getMessage());
+            $errorMessage = translateHelper::translateCached(
+                'deposit_details_failed',
+                'Failed to retrieve deposit request details.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
-
-//    /**
-//     * Manager – Approve Deposit Request
-//     */
-//    public function approve($deposit)
-//    {
-//        try {
-//            // get current user
-//            $user = auth()->user();
-//
-//            $deposit = DepositRequest::with('user')->where('manager_id', $user->id)->find($deposit);
-//
-//            if (!$deposit) {
-//                return $this->sendError("Deposit request not found.",[], 404);
-//            }
-//            if($deposit->manager_id !== $user->id){
-//                return $this->sendError("You don't have permission to access this page.",[], 403);
-//            }
-//            if ($deposit->status !== TransactionStatus::PENDING->value) {
-//                return $this->sendError('Deposit already processed', [], 422);
-//            }
-//
-//            $request_user  = $deposit->user;
-//
-//            DB::transaction(function () use ($deposit, $user, $request_user) {
-//
-//                // Manager → User wallet
-//                $user->wallet->decrement('balance', $deposit->amount);
-//                $request_user->wallet->increment('balance', $deposit->amount);
-//
-//                // Ledger
-//                WalletTransaction::create([
-//                    'from_user_id' => $user->id,
-//                    'to_user_id'   => $request_user->id,
-//                    'amount'       => $deposit->amount,
-//                    'type'         => TransactionType::CREDIT->value,
-//                    'source'       => TransactionSource::DEPOSIT->value,
-//                    'status'       => TransactionStatus::APPROVED->value,
-//                    'reference_id' => $deposit->id,
-//                ]);
-//
-//                // Update status
-//                $deposit->update([
-//                    'status' => TransactionStatus::APPROVED->value,
-//                ]);
-//            });
-//
-//            // Notify user
-//            $user->notify(new UniversalNotification(
-//                'Deposit Approved',
-//                "Your deposit of {$deposit->amount} has been approved.",
-//                'success',
-//                ['deposit_id' => $deposit->id]
-//            ));
-//
-//            return $this->sendResponse([], 'Deposit approved successfully');
-//        } catch (\Exception $e) {
-//            Log::error('Deposit approval failed', [
-//                'deposit_id' => $deposit->id,
-//                'error'      => $e->getMessage(),
-//            ]);
-//
-//            return $this->sendError('Failed to approve deposit', [], 500);
-//        }
-//    }
 
     /**
      * Manager – Approve Deposit Request (LOCK SAFE)
      */
-    public function approve($depositId)
+    public function approve(Request $request,$depositId)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $manager = auth()->user();
 
@@ -158,15 +155,33 @@ class DepositRequestController extends Controller
             $deposit = DepositRequest::with('user')->where('manager_id', $manager->id)->find($depositId);
 
             if (!$deposit) {
-                return $this->sendError("Deposit request not found.", [], 404);
+                return $this->sendError(
+                    translateHelper::translateCached(
+                        'deposit_not_found',
+                        'Deposit request not found.',
+                        $lang
+                    ),[],404
+                );
             }
 
             if ($deposit->manager_id !== $manager->id) {
-                return $this->sendError("You don't have permission to access this page.", [], 403);
+                return $this->sendError(
+                    translateHelper::translateCached(
+                        'deposit_permission_denied',
+                        "You don't have permission to access this page.",
+                        $lang
+                    ),[], 403
+                );
             }
 
             if ($deposit->status !== TransactionStatus::PENDING->value) {
-                return $this->sendError('Deposit already processed', [], 422);
+                return $this->sendError(
+                    translateHelper::translateCached(
+                        'deposit_already_processed',
+                        'Deposit already processed.',
+                        $lang
+                    ), [], 422
+                );
             }
 
             // Ensure manager wallet exists
@@ -177,14 +192,16 @@ class DepositRequestController extends Controller
             // Early balance check
             if ($managerWallet->balance < $deposit->amount) {
                 return $this->sendError(
-                    "Manager does not have sufficient balance to approve this deposit.",
-                    [],
-                    422
+                    translateHelper::translateCached(
+                        'deposit_manager_insufficient_balance',
+                        'Manager does not have sufficient balance to approve this deposit.',
+                        $lang
+                    ), [],422
                 );
             }
 
             /* ================= TRANSACTION WITH LOCK ================= */
-            DB::transaction(function () use ($depositId, $manager) {
+            DB::transaction(function () use ($depositId, $manager,$lang) {
 
                 // Lock deposit row
                 $deposit = DepositRequest::where('id', $depositId)
@@ -192,7 +209,13 @@ class DepositRequestController extends Controller
                     ->first();
 
                 if ($deposit->status !== TransactionStatus::PENDING->value) {
-                    throw new \Exception('Deposit already processed.');
+                    throw new \RuntimeException(
+                        translateHelper::translateCached(
+                            'deposit_already_processed',
+                            'Deposit already processed.',
+                            $lang
+                        )
+                    );
                 }
 
                 // Lock manager wallet
@@ -202,13 +225,20 @@ class DepositRequestController extends Controller
 
                 // Lock user & user wallet
                 $requestUser = $deposit->user()->lockForUpdate()->first();
-                $userWallet  = $requestUser->wallet()
+                $userWallet = $requestUser->wallet()
                     ->lockForUpdate()
                     ->firstOrCreate(['user_id' => $requestUser->id]);
 
                 // FINAL balance check
                 if ($managerWallet->balance < $deposit->amount) {
-                    throw new \Exception('Manager has insufficient balance.');
+
+                    throw new \RuntimeException(
+                        translateHelper::translateCached(
+                            'deposit_manager_insufficient_balance',
+                            'Manager has insufficient balance.',
+                            $lang
+                        )
+                    );
                 }
 
                 // Manager → User wallet transfer
@@ -218,11 +248,11 @@ class DepositRequestController extends Controller
                 // Ledger
                 WalletTransaction::create([
                     'from_user_id' => $manager->id,
-                    'to_user_id'   => $requestUser->id,
-                    'amount'       => $deposit->amount,
-                    'type'         => TransactionType::CREDIT->value,
-                    'source'       => TransactionSource::DEPOSIT->value,
-                    'status'       => TransactionStatus::APPROVED->value,
+                    'to_user_id' => $requestUser->id,
+                    'amount' => $deposit->amount,
+                    'type' => TransactionType::CREDIT->value,
+                    'source' => TransactionSource::DEPOSIT->value,
+                    'status' => TransactionStatus::APPROVED->value,
                     'reference_id' => $deposit->id,
                 ]);
 
@@ -233,15 +263,15 @@ class DepositRequestController extends Controller
 
                 // Log activity
                 ActiveLog::create([
-                    'actor_id'       => $manager->id,
+                    'actor_id' => $manager->id,
                     'target_user_id' => $requestUser->id,
-                    'type'           => Type::DEPOSIT,
-                    'action'         => Action::APPROVED,
-                    'amount'         => $deposit->amount,
+                    'type' => Type::DEPOSIT,
+                    'action' => Action::APPROVED,
+                    'amount' => $deposit->amount,
                     'reference_type' => DepositRequest::class,
-                    'reference_id'   => $deposit->id,
-                    'message'        => "Approved {$requestUser->first_name}'s deposit ({$deposit->amount})",
-                    'level'          => Level::SUCCESS,
+                    'reference_id' => $deposit->id,
+                    'message' => "Approved {$requestUser->first_name}'s deposit ({$deposit->amount})",
+                    'level' => Level::SUCCESS,
                 ]);
             });
 
@@ -255,19 +285,30 @@ class DepositRequestController extends Controller
                 )
             );
 
-            return $this->sendResponse([], 'Deposit approved successfully');
+            return $this->sendResponse(
+                [],
+                translateHelper::translateCached(
+                    'deposit_approve_success',
+                    'Deposit approved successfully.',
+                    $lang
+                )
+            );
 
         } catch (\Exception $e) {
-
             Log::error('Deposit approval failed', [
                 'deposit_id' => $depositId,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
-            return $this->sendError('Failed to approve deposit:'.$e->getMessage(), [], 500);
+            return $this->sendError(
+                translateHelper::translateCached(
+                    'deposit_approve_failed',
+                    'Failed to approve deposit.',
+                    $lang
+                ), [],500
+            );
         }
     }
-
 
 
     /**
@@ -275,6 +316,7 @@ class DepositRequestController extends Controller
      */
     public function reject(RejectRequest $request, $deposit)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
             // get current user (manager)
@@ -286,33 +328,51 @@ class DepositRequestController extends Controller
                 ->find($deposit);
 
             if (!$deposit) {
-                return $this->sendError("Deposit request not found.", [], 404);
+                $errorMessage = translateHelper::translateCached(
+                    'deposit_details_not_found',
+                    'Deposit request not found.',
+                    $lang
+                );
+
+                return $this->sendError($errorMessage, [], 404);
             }
 
             if ($deposit->manager_id !== $user->id) {
-                return $this->sendError( "You don't have permission to access this page.", [],403);
+                $errorMessage = translateHelper::translateCached(
+                    'deposit_permission_denied',
+                    "You don't have permission to access this page.",
+                    $lang
+                );
+
+                return $this->sendError($errorMessage, [], 403);
             }
 
             if ($deposit->status !== TransactionStatus::PENDING->value) {
-                return $this->sendError('Deposit already processed', [], 422);
+                $errorMessage = translateHelper::translateCached(
+                    'deposit_already_processed',
+                    'Deposit already processed.',
+                    $lang
+                );
+
+                return $this->sendError($errorMessage, [], 422);
             }
 
             // Reject deposit (NO wallet movement)
             $deposit->update([
-                'status'  => TransactionStatus::REJECTED->value,
+                'status' => TransactionStatus::REJECTED->value,
                 'reject_reason' => $validated['reason'],
             ]);
 
             ActiveLog::create([
-                'actor_id'       => $user->id,
+                'actor_id' => $user->id,
                 'target_user_id' => $deposit->user_id,
-                'type'           => Type::DEPOSIT,
-                'action'         => Action::REJECTED,
-                'amount'         => $deposit->amount,
+                'type' => Type::DEPOSIT,
+                'action' => Action::REJECTED,
+                'amount' => $deposit->amount,
                 'reference_type' => DepositRequest::class,
-                'reference_id'   => $deposit->id,
-                'message'        => "Rejected {$deposit->user->first_name}'s deposit ({$deposit->amount})",
-                'level'          => Level::DANGER,
+                'reference_id' => $deposit->id,
+                'message' => "Rejected {$deposit->user->first_name}'s deposit ({$deposit->amount})",
+                'level' => Level::DANGER,
             ]);
 
             // Notify request user
@@ -326,13 +386,25 @@ class DepositRequestController extends Controller
                 )
             );
 
-            return $this->sendResponse([], 'Deposit rejected successfully');
+            $successMessage = translateHelper::translateCached(
+                'deposit_rejected_success',
+                'Deposit rejected successfully.',
+                $lang
+            );
+
+            return $this->sendResponse([], $successMessage);
         } catch (\Exception $e) {
             Log::error('Deposit rejection failed', [
                 'deposit_id' => $deposit ?? null,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
-            return $this->sendError('Failed to reject deposit', [], 500);
+            $errorMessage = translateHelper::translateCached(
+                'deposit_rejected_failed',
+                'Failed to reject deposit.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 

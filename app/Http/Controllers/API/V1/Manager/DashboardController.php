@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1\Manager;
 
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Manager\ActivityLogRequest;
 use App\Http\Requests\Api\V1\Manager\getRecentTransactionRequest;
@@ -24,14 +25,21 @@ class DashboardController extends Controller
     /**
      * Manager Overview -> Quick Stats
      */
-    public function summary()
+    public function summary(Request $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $manager = auth()->user();
 
             // Role check
             if ($manager->role->value !== 'manager') {
-                return $this->sendError('Unauthorized access', [], 403);
+                $message = translateHelper::translateCached(
+                    'manager_dashboard_unauthorized',
+                    'Unauthorized access.',
+                    $lang
+                );
+
+                return $this->sendError($message, [], 403);
             }
 
              // Pending Deposits
@@ -61,20 +69,34 @@ class DashboardController extends Controller
                 ->count();
 
 
-            // Response
+            $successMessage = translateHelper::translateCached(
+                'manager_dashboard_summary_success',
+                'Manager dashboard summary retrieved successfully.',
+                $lang
+            );
 
+
+            // Response
             return $this->sendResponse([
                 'pending_deposits' => $pendingDeposits,
                 'pending_withdrawals' => $pendingWithdrawals,
                 'pending_kyc' => [
                     'count' => $pendingKyc,
-                    'label' => 'Need Review',
+                    'label' => 'Need Review' ? translateHelper::translateCached(
+                        'manager_pending_kyc_label',
+                        'Need Review',
+                        $lang
+                    ) : null,
                 ],
                 'assigned_investors' => [
                     'count' => $assignedInvestors,
-                    'label' => 'Active',
+                    'label' => 'Active' ? translateHelper::translateCached(
+                        'manager_assigned_investors_label',
+                        'Active',
+                        $lang
+                    ) : null,
                 ],
-            ], 'Manager dashboard summary retrieved successfully');
+            ], $successMessage);
 
         } catch (\Exception $e) {
 
@@ -83,7 +105,13 @@ class DashboardController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->sendError('Failed to retrieve dashboard summary',  [], 500);
+            $errorMessage = translateHelper::translateCached(
+                'manager_dashboard_summary_failed',
+                'Failed to retrieve dashboard summary.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 
@@ -93,6 +121,7 @@ class DashboardController extends Controller
      */
     public function ActivityLogs(ActivityLogRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
             $page    = $validated['page'] ?? 1;
@@ -106,13 +135,31 @@ class DashboardController extends Controller
 
             $logs = $query->paginate($perPage, ['*'], 'page', $page);
 
-            return $this->sendResponse(  ActivityLogResource::collection($logs),'Activity logs retrieved successfully.', 200,[],$logs);
+            $successMessage = translateHelper::translateCached(
+                'activity_logs_retrieved_success',
+                'Activity logs retrieved successfully.',
+                $lang
+            );
+
+            return $this->sendResponse(
+                ActivityLogResource::collection($logs),
+                $successMessage,
+                200,
+                [],
+                $logs
+            );
         }catch (\Exception $e) {
             Log::error('Activity log error', [
                 'manager_id' => auth()->id(),
                 'error' => $e->getMessage(),
             ]);
-            return $this->sendError('Failed to retrieve Activity log.', [], 500);
+            $errorMessage = translateHelper::translateCached(
+                'activity_logs_retrieved_failed',
+                'Failed to retrieve activity logs.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 
@@ -121,6 +168,7 @@ class DashboardController extends Controller
      */
     public function getRecentTransactions(getRecentTransactionRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
 
@@ -157,16 +205,32 @@ class DashboardController extends Controller
                 ->orderBy('date', 'desc')
                 ->paginate($perPage);
 
+
             return $this->sendResponse(
                 RecentTransactionResource::collection($requests),
-                'Recent transactions retrieved successfully.',200,[],$requests
+                translateHelper::translateCached(
+                    'recent_transactions_success',
+                    'Recent transactions retrieved successfully.',
+                    $lang
+                ),
+                200,
+                [],
+                $requests
             );
+
         }catch (\Exception $e) {
             Log::error('Recent transactions error', [
                 'manager_id' => auth()->id(),
                 'error' => $e->getMessage(),
             ]);
-            return $this->sendError('Failed to retrieve Recent transactions.', [], 500);
+
+            $errorMessage = translateHelper::translateCached(
+                'recent_transactions_failed',
+                'Failed to retrieve recent transactions.',
+                $lang
+            );
+
+            return $this->sendError($errorMessage, [], 500);
         }
     }
 
