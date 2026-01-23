@@ -18,6 +18,7 @@ use App\Http\Controllers\API\V1\NotificationController;
 use App\Http\Controllers\API\V1\PackageController;
 use App\Http\Controllers\API\V1\ReferralController;
 use App\Http\Controllers\API\V1\Auth\User\ReferralController as AuthUserReferralController;
+use App\Http\Controllers\API\V1\SupportTicketController;
 use App\Http\Controllers\API\V1\WalletController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\V1\Manager\DepositRequestController;
@@ -142,6 +143,18 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
         Route::get('/my',  'myInvestments');
         Route::get('/summary', 'investmentSummary');
 
+    });
+
+    /**
+     * support ticket management
+     */
+    Route::prefix('v1/support-ticket')->controller(SupportTicketController::class)->group(function () {
+        Route::get('/support/meta','getData');
+        Route::get('/', 'index');
+        Route::post('/',  'store');
+        Route::get('/{ticket}', 'show');
+        Route::post('/{ticket}/reply',  'reply');
+        Route::post('/{ticket}/close',  'close');
     });
 
     // --------------------------------- manager role

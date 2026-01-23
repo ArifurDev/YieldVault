@@ -1,6 +1,7 @@
 <?php
 
 
+use App\Http\Controllers\API\Web\Backend\SupportTicketController;
 use App\Http\Controllers\Web\Backend\DailyTaskController;
 use App\Http\Controllers\Web\Backend\DashboardController;
 use App\Http\Controllers\Web\Backend\DynamicPageController;
@@ -211,3 +212,17 @@ Route::prefix('/roi')->controller(RoiListController::class)->group(function () {
 
 
 Route::post('clear-cache', [SettingController::class, 'clearCache'])->name('cache.clear');
+
+
+
+
+Route::prefix('/support-tickets')->controller(SupportTicketController::class)->group(function () {
+    Route::get('/support-tickets', [SupportTicketController::class, 'index'])->name('support-tickets.index');
+    Route::get('/support-tickets/data', [SupportTicketController::class, 'data'])->name('support-tickets.data');
+    Route::get('/support-tickets/{ticket}', [SupportTicketController::class, 'show'])->name('support-tickets.show');
+    Route::post('/support-tickets/{ticket}/reply', [SupportTicketController::class, 'reply'])->name('support-tickets.reply');
+    Route::post('/support-tickets/{ticket}/close', [SupportTicketController::class, 'close'])->name('support-tickets.close');
+});
+
+
+
