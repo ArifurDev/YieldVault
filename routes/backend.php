@@ -209,19 +209,14 @@ Route::prefix('/roi')->controller(RoiListController::class)->group(function () {
     Route::get('/{investment}/logs/data', 'logsData')->name('roi.logs.data');
 });
 
-
-
 Route::post('clear-cache', [SettingController::class, 'clearCache'])->name('cache.clear');
 
-
-
-
 Route::prefix('/support-tickets')->controller(SupportTicketController::class)->group(function () {
-    Route::get('/support-tickets', [SupportTicketController::class, 'index'])->name('support-tickets.index');
-    Route::get('/support-tickets/data', [SupportTicketController::class, 'data'])->name('support-tickets.data');
-    Route::get('/support-tickets/{ticket}', [SupportTicketController::class, 'show'])->name('support-tickets.show');
-    Route::post('/support-tickets/{ticket}/reply', [SupportTicketController::class, 'reply'])->name('support-tickets.reply');
-    Route::post('/support-tickets/{ticket}/close', [SupportTicketController::class, 'close'])->name('support-tickets.close');
+    Route::get('/',  'index')->name('support-tickets.index');
+    Route::get('/data',  'data')->name('support-tickets.data');
+    Route::get('/{ticket}',  'show')->name('support-tickets.show');
+    Route::post('/{ticket}/reply',  'reply')->name('support-tickets.reply');
+    Route::post('/{ticket}/close',  'close')->name('support-tickets.close');
 });
 
 

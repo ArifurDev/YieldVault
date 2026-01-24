@@ -18,6 +18,7 @@ class SupportTicket extends Model
         'subject',
         'category',
         'priority',
+        'is_read',
         'status',
     ];
 
@@ -84,5 +85,26 @@ class SupportTicket extends Model
     public function isAssigned(): bool
     {
         return !is_null($this->assigned_to);
+    }
+
+    /**
+     * Unread messages for admin/manager
+     */
+    public function unreadCountFor(int $userId): int
+    {
+        return $this->messages()
+            ->where('sender_id', '!=', $userId)
+            ->where('is_read', false)
+            ->count();
+    }
+
+    /**
+     * Check if last message was sent by ticket owner
+     */
+    public function needsReply(): bool
+    {
+        $lastMessage = $this->messages()->latest()->first();
+
+        return $lastMessage && $lastMessage->sender_id === $this->user_id;
     }
 }

@@ -155,7 +155,8 @@ class SupportTicketController extends Controller
                 'support_ticket_id' => $ticket->id,
                 'sender_id'         => $user->id,
                 'message'           => $validated['message'],
-            ]);
+                'reply_to_id'       => $request->reply_to_id,
+                ]);
 
             // update ticket update time
             $ticket->touch();

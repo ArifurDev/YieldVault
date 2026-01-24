@@ -23,6 +23,7 @@ class ReplyRequest extends FormRequest
     {
         return [
             'message' => 'required|string',
+            'reply_to_id' => 'nullable|exists:support_messages,id',
         ];
     }
 }
