@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\SupportTicket\CreateRequest;
 use App\Http\Requests\Api\V1\SupportTicket\IndexRequest;
 use App\Http\Requests\Api\V1\SupportTicket\ReplyRequest;
+use App\Http\Resources\Api\V1\SupportTicket\SupportTicketDetailsResource;
 use App\Http\Resources\Api\V1\SupportTicket\TicketsResource;
 use App\Models\SupportMessage;
 use App\Models\SupportTicket;
@@ -126,12 +127,39 @@ class SupportTicketController extends Controller
     {
         $this->authorizeTicket($ticket);
 
+
+        // permission check
+        $this->authorizeTicket($ticket);
+
+        // Load data Facebook-comment style
         $ticket->load([
-            'messages.sender:id,first_name,last_name',
-            'assignedTo:id,first_name,last_name'
+            'user',
+            'assignedTo',
+
+            // ONLY root comments
+            'messages' => fn ($q) => $q
+                ->whereNull('reply_to_id')
+                ->oldest(),
+
+            'messages.sender',
+
+            // Replies (1 level only)
+            'messages.replies' => fn ($q) => $q->oldest(),
+            'messages.replies.sender',
         ]);
 
-        return $this->sendResponse($ticket, 'Support ticket details retrieved');
+        // Mark unread messages as read (user side)
+        $ticket->messages()
+            ->where('sender_id', '!=', auth()->id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return $this->sendResponse(
+            new SupportTicketDetailsResource($ticket),
+            'Support ticket details retrieved'
+        );
+
+
     }
 
     /**

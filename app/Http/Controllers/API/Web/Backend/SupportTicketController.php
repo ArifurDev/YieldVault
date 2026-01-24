@@ -94,11 +94,6 @@ class SupportTicketController extends Controller
      */
     public function show(SupportTicket $ticket)
     {
-//        $ticket->load([
-//            'user',
-//            'assignedTo',
-//            'messages.sender'
-//        ]);
         $ticket->load([
             'user',
             'assignedTo',

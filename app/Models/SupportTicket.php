@@ -18,7 +18,6 @@ class SupportTicket extends Model
         'subject',
         'category',
         'priority',
-        'is_read',
         'status',
     ];
 

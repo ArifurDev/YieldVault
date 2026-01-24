@@ -12,6 +12,7 @@ class SupportMessage extends Model
         'reply_to_id',
         'sender_id',
         'message',
+        'is_read',
         'attachment',
     ];
 
