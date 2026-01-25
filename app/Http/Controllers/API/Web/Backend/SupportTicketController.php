@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\Web\Backend;
 
+use App\Enum\Support\Status;
 use App\Http\Controllers\Controller;
 use App\Models\SupportMessage;
 use App\Models\SupportTicket;
@@ -28,6 +29,26 @@ class SupportTicketController extends Controller
             return DataTables::of($query)
 
                 ->addIndexColumn()
+                ->filter(function ($query) use ($request) {
+                    if ($search = $request->get('search')['value']) {
+                        $search = trim(str_replace('#', '', $search));
+                        $query->where(function ($q) use ($search) {
+                            $q->where('id', 'like', "%{$search}%")
+                                ->orWhere('subject', 'like', "%{$search}%")
+                                ->orWhere('category', 'like', "%{$search}%")
+                                ->orWhere('priority', 'like', "%{$search}%")
+                                ->orWhere('status', 'like', "%{$search}%")
+                                ->orWhereHas('user', fn ($u) =>
+                                $u->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%")
+                                )
+                                ->orWhereHas('assignedTo', fn ($a) =>
+                                $a->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%")
+                                );
+                        });
+                    }
+                })
 
                 ->addColumn('ticket_no', fn ($t) =>
                     '#' . str_pad($t->id, 6, '0', STR_PAD_LEFT)
@@ -149,6 +170,44 @@ class SupportTicketController extends Controller
             return redirect()->route('support-tickets.show', $ticket)->with('success', 'Reply sent successfully');
         }catch (\Exception $e){
             return redirect()->route('support-tickets.show', $ticket)->with('error', $e->getMessage());
+        }
+    }
+
+    public function close(Request $request, SupportTicket $ticket)
+    {
+        try {
+            // already closed?
+            if ($ticket->status === Status::CLOSED) {
+                return back()->with('error', 'Ticket is already closed.');
+            }
+
+            // update status
+            $ticket->update([
+                'status' => Status::CLOSED,
+            ]);
+
+            // optional: notify user
+            $ticket->user->notify(
+                new UniversalNotification(
+                    'Support Ticket Closed',
+                    "Your support ticket #" . str_pad($ticket->id, 6, '0', STR_PAD_LEFT) . " has been closed.",
+                    'info',
+                    [
+                        'ticket_id' => $ticket->id,
+                        'status' => Status::CLOSED->value,
+                    ]
+                )
+            );
+
+            return back()->with('success', 'Ticket closed successfully.');
+
+        } catch (\Exception $e) {
+            \Log::error('Close ticket failed', [
+                'ticket_id' => $ticket->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Failed to close ticket.');
         }
     }
 }

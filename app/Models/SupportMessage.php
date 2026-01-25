@@ -40,6 +40,18 @@ class SupportMessage extends Model
 
     public function replies()
     {
-        return $this->hasMany(SupportMessage::class, 'reply_to_id');
+        return $this->hasMany(
+            SupportMessage::class,
+            'reply_to_id'
+        )->with('replies'); //  recursion
     }
+
+    public function parent()
+    {
+        return $this->belongsTo(
+            SupportMessage::class,
+            'reply_to_id'
+        );
+    }
+
 }

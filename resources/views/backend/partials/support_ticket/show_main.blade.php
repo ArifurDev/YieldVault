@@ -110,32 +110,43 @@
 
                         </div>
 
-                        <!-- REPLY FOOTER -->
-                        <div class="card-footer">
-                            <form method="POST" action="{{ route('support-tickets.reply',$ticket) }}">
-                                @csrf
 
-                                <div id="replyPreview" class="alert alert-secondary d-none">
-                                    <strong>Replying to:</strong>
-                                    <span id="replyText"></span>
-                                    <button type="button"
-                                            class="btn-close float-end"
-                                            onclick="clearReply()"></button>
-                                </div>
 
-                                <input type="hidden" name="reply_to_id" id="reply_to_id">
 
-                                <textarea name="message"
-                                          class="form-control"
-                                          rows="3"
-                                          placeholder="Write your reply..."
-                                          required></textarea>
+                        @if($ticket->status === \App\Enum\Support\Status::CLOSED)
+                            <div class="alert alert-warning text-center">
+                                This ticket has been closed. Reply is disabled.
+                            </div>
+                        @else
+                            <!-- REPLY FOOTER -->
+                            <div class="card-footer">
+                                <form method="POST" action="{{ route('support-tickets.reply',$ticket) }}">
+                                    @csrf
 
-                                <div class="text-end mt-2">
-                                    <button class="btn btn-primary">Send Reply</button>
-                                </div>
-                            </form>
-                        </div>
+                                    <div id="replyPreview" class="alert alert-secondary d-none">
+                                        <strong>Replying to:</strong>
+                                        <span id="replyText"></span>
+                                        <button type="button"
+                                                class="btn-close float-end"
+                                                onclick="clearReply()"></button>
+                                    </div>
+
+                                    <input type="hidden" name="reply_to_id" id="reply_to_id">
+
+                                    <textarea name="message"
+                                              class="form-control"
+                                              rows="3"
+                                              placeholder="Write your reply..."
+                                              required></textarea>
+
+                                    <div class="text-end mt-2">
+                                        <button class="btn btn-primary">Send Reply</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                        @endif
+
 
 
                     </div>
@@ -217,9 +228,22 @@
                             </div>
 
                             {{-- ACTION --}}
-                            <button class="btn btn-danger w-100">
-                                Close Ticket
-                            </button>
+                            @if($ticket->status !== \App\Enum\Support\Status::CLOSED)
+                                <form method="POST"
+                                      action="{{ route('support-tickets.close', $ticket) }}"
+                                      onsubmit="return confirm('Are you sure you want to close this ticket?');">
+                                    @csrf
+
+                                    <button class="btn btn-danger w-100">
+                                        Close Ticket
+                                    </button>
+                                </form>
+                            @else
+                                <button class="btn btn-secondary w-100" disabled>
+                                    Ticket Closed
+                                </button>
+                            @endif
+
 
                         </div>
                     </div>

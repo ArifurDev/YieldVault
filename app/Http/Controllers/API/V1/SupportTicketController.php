@@ -6,6 +6,7 @@ use App\Enum\Role;
 use App\Enum\Support\Category;
 use App\Enum\Support\Priority;
 use App\Enum\Support\Status;
+use App\Helpers\translateHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\SupportTicket\CreateRequest;
 use App\Http\Requests\Api\V1\SupportTicket\IndexRequest;
@@ -30,6 +31,7 @@ class SupportTicketController extends Controller
      */
     public function index(IndexRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         try {
             $validated = $request->validated();
 
@@ -41,13 +43,26 @@ class SupportTicketController extends Controller
                 ->latest()
                 ->paginate($perPage);
 
-            return $this->sendResponse(TicketsResource::collection($tickets), 'Support tickets retrieved successfully',200,[],$tickets);
+            $message =  translateHelper::translateCached(
+                'support_tickets_list_success',
+                'Support tickets retrieved successfully',
+                $lang
+            );
+
+            return $this->sendResponse(TicketsResource::collection($tickets), $message,200,[],$tickets);
         }catch (\Exception $e){
             Log::error("Failed to get support tickets",[
                 'userId' => auth()->id(),
                 'message' => $e->getMessage()
             ]);
-            return $this->sendError('Failed to get support tickets',[],500);
+
+            $message = translateHelper::translateCached(
+                'support_tickets_list_failed',
+                'Failed to get support tickets',
+                $lang
+            );
+
+            return $this->sendError($message,[],500);
         }
     }
 
@@ -57,6 +72,7 @@ class SupportTicketController extends Controller
      */
     public function store(CreateRequest $request)
     {
+        $lang = $request->header('Accept-Language', 'en');
         DB::beginTransaction();
         try {
             $validated = $request->validated();
@@ -73,9 +89,19 @@ class SupportTicketController extends Controller
                 return $this->sendError('You already have an open support ticket.', [],422);
             }
 
+            // Normalize input → English
+            $subject = translateHelper::toEnglish(
+                $validated['subject'],
+                $lang
+            );
+            $message = translateHelper::toEnglish(
+                $validated['message'],
+                $lang
+            );
+
             $ticket = SupportTicket::create([
                 'user_id'  => $user->id,
-                'subject'  => $validated['subject'],
+                'subject'  => $subject,
                 'category' => $validated['category'],
                 'priority' => $validated['priority'] ?? 'medium',
                 'status'   => Status::OPEN,
@@ -85,7 +111,7 @@ class SupportTicketController extends Controller
             SupportMessage::create([
                 'support_ticket_id' => $ticket->id,
                 'sender_id'         => $user->id,
-                'message'           => $request->message,
+                'message'           => $message,
             ]);
 
             // notify admin
@@ -109,57 +135,102 @@ class SupportTicketController extends Controller
             }
 
             DB::commit();
-            return $this->sendResponse([], 'Support ticket created successfully');
+
+            $message = translateHelper::translateCached(
+                'support_ticket_created_success',
+                'Support ticket created successfully',
+                $lang
+            );
+
+            return $this->sendResponse( [],$message);
         }catch (\Exception $e){
             DB::rollBack();
             Log::error("Failed to create support ticket",[
                 'userId' => auth()->user()->id,
                 'message' => $e->getMessage(),
             ]);
-            return $this->sendError("Failed to create support ticket.", [], 500);
+            $message =  translateHelper::translateCached(
+                'support_ticket_created_failed',
+                'Failed to create support ticket.',
+                $lang
+            );
+            return $this->sendError($message,[],500);
         }
     }
 
     /**
      * View single ticket with messages
      */
-    public function show(SupportTicket $ticket)
+    public function show(Request $request,SupportTicket $ticket)
     {
-        $this->authorizeTicket($ticket);
+        $lang = $request->header('Accept-Language', 'en');
+
+        try {
+            // permission check
+            $this->authorizeTicket($ticket);
+
+//            // Load data
+//            $ticket->load([
+//                'user',
+//                'assignedTo',
+//
+//                // ONLY root comments
+//                'messages' => fn ($q) => $q
+//                    ->whereNull('reply_to_id')
+//                    ->oldest(),
+//
+//                'messages.sender',
+//
+//                // Replies (1 level only)
+//                'messages.replies' => fn ($q) => $q->oldest(),
+//                'messages.replies.sender',
+//            ]);
+
+            $ticket->load([
+                'user',
+                'assignedTo',
+
+                // Root messages only
+                'messages' => fn ($q) => $q
+                    ->whereNull('reply_to_id')
+                    ->oldest(),
+
+                'messages.sender',
+
+                // 🔥 recursive replies
+                'messages.replies.sender',
+            ]);
+
+            // Mark unread messages as read (user side)
+            $ticket->messages()
+                ->where('sender_id', '!=', auth()->id())
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
 
 
-        // permission check
-        $this->authorizeTicket($ticket);
+            $message = translateHelper::translateCached(
+                'support_ticket_details_success',
+                'Support ticket details retrieved',
+                $lang
+            );
 
-        // Load data Facebook-comment style
-        $ticket->load([
-            'user',
-            'assignedTo',
+            return $this->sendResponse(
+                new SupportTicketDetailsResource($ticket),
+                $message
+            );
+        }catch (\Exception $e){
+            Log::error("Failed to get support ticket",[
+                'userId' => auth()->user()->id,
+                'message' => $e->getMessage(),
+            ]);
 
-            // ONLY root comments
-            'messages' => fn ($q) => $q
-                ->whereNull('reply_to_id')
-                ->oldest(),
-
-            'messages.sender',
-
-            // Replies (1 level only)
-            'messages.replies' => fn ($q) => $q->oldest(),
-            'messages.replies.sender',
-        ]);
-
-        // Mark unread messages as read (user side)
-        $ticket->messages()
-            ->where('sender_id', '!=', auth()->id())
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
-
-        return $this->sendResponse(
-            new SupportTicketDetailsResource($ticket),
-            'Support ticket details retrieved'
-        );
-
-
+            $message = translateHelper::translateCached(
+                'support_ticket_details_failed',
+                'Failed to get support ticket',
+                $lang
+            );
+            return $this->sendError( $message [], 500);
+        }
     }
 
     /**
@@ -167,6 +238,8 @@ class SupportTicketController extends Controller
      */
     public function reply(ReplyRequest $request, SupportTicket $ticket)
     {
+        $lang = $request->header('Accept-Language', 'en');
+
         try {
             $this->authorizeTicket($ticket);
 
@@ -178,11 +251,16 @@ class SupportTicketController extends Controller
             if ($ticket->status !== Status::OPEN) {
                 return $this->sendError('Ticket is closed.', [], 422);
             }
+            // Normalize input → English
+            $messageText = translateHelper::toEnglish(
+                $validated['message'],
+                $lang
+            );
 
             $message = SupportMessage::create([
                 'support_ticket_id' => $ticket->id,
                 'sender_id'         => $user->id,
-                'message'           => $validated['message'],
+                'message'           => $messageText,
                 'reply_to_id'       => $request->reply_to_id,
                 ]);
 
@@ -210,13 +288,23 @@ class SupportTicketController extends Controller
 
             }
 
-            return $this->sendResponse([], 'Reply sent successfully');
+            $responseMessage =  translateHelper::translateCached(
+                'support_ticket_reply_success',
+                'Reply sent successfully',
+                $lang
+            );
+            return $this->sendResponse([], $responseMessage);
         }catch (\Exception $e){
             Log::error("Failed to send reply",[
                 'userId' => auth()->user()->id,
                 'message' => $e->getMessage(),
             ]);
-            return $this->sendError("Failed to send reply.", [], 500);
+            $message =  translateHelper::translateCached(
+                'support_ticket_reply_failed',
+                'Failed to send reply.',
+                $lang
+            );
+            return $this->sendError($message, [], 500);
         }
     }
 
@@ -228,19 +316,45 @@ class SupportTicketController extends Controller
         $lang = $request->header('Accept-Language', 'en');
         try {
             $data = [
-                'categories' => collect(Category::cases())->map(fn ($item) => [
-                    'value' => $item->value,
-                    'label' => $item->label(),
-                ]),
+                'categories' => collect(Category::cases())->map(function ($item) use ($lang) {
+                    $label = $item->label();
+                    return [
+                        'value' => $item->value,
+                        'label' => translateHelper::translateCached(
+                            'support_category_' . md5($label),
+                            $label,
+                            $lang
+                        ),
+                    ];
+                }),
 
-                'priorities' => collect(Priority::cases())->map(fn ($item) => [
-                    'value' => $item->value,
-                    'label' => $item->label(),
-                ]),
+                'priorities' => collect(Priority::cases())->map(function ($item) use ($lang) {
+                    $label = $item->label();
+                    return [
+                        'value' => $item->value,
+                        'label' => translateHelper::translateCached(
+                            'support_priority_' . md5($label),
+                            $label,
+                            $lang
+                        ),
+                    ];
+                }),
+
             ];
-            return $this->sendResponse($data, 'Support metadata retrieved successfully');
+
+            $message =  translateHelper::translateCached(
+                'support_meta_success',
+                'Support metadata retrieved successfully',
+                $lang
+            );
+            return $this->sendResponse($data, $message);
         }catch (\Exception $e){
-            return $this->sendError("Failed to retrieve data.", [],500);
+            $message = translateHelper::translateCached(
+                'support_meta_failed',
+                'Failed to retrieve data.',
+                $lang
+            );
+            return $this->sendError($message,[],500 );
         }
     }
 
