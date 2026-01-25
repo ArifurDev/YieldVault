@@ -242,7 +242,7 @@
                          <span class="path2"></span>
                     </i>
                     </span>
-                    <span class="menu-title">Support Ticket Management</span>
+                    <span class="menu-title">Support Tickets</span>
                 </a>
             </div>
             <!--end:Menu item-->
