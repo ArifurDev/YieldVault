@@ -68,6 +68,11 @@ class TransactionController extends Controller
                     }
                 })
 
+
+                ->addColumn('TXN', fn ($row) =>
+                  "TXN-". str_pad( $row->id,6,'0',STR_PAD_LEFT)
+                )
+
                 ->addColumn('from', fn ($row) =>
                 $row->fromUser
                     ? $row->fromUser->first_name.' '.$row->fromUser->last_name
@@ -120,7 +125,7 @@ class TransactionController extends Controller
                     </button>
                 ')
 
-                ->rawColumns(['from','to','amount','type','source','status','action'])
+                ->rawColumns(['TXN','from','to','amount','type','source','status','action'])
                 ->make(true);
         }
 

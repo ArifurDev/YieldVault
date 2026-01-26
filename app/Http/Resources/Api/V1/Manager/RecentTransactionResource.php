@@ -19,6 +19,7 @@ class RecentTransactionResource extends JsonResource
 //        return parent::toArray($request);
         return [
             'id'   => $this->source_id,
+            'txn_id' => $this->source_id ? "TXN-". str_pad($this->source_id,6,'0',STR_PAD_LEFT) : null,
             'date' => $this->date
                 ? \Carbon\Carbon::parse($this->date)->format('Y-m-d H:i:s')
                 : null,

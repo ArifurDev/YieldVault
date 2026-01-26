@@ -132,6 +132,7 @@ class DashboardController extends Controller
             ->map(function ($trx) {
                 return [
                     'id'     => $trx->id,
+                    'txn_id' => "TXN-". str_pad( $trx->id,6,'0',STR_PAD_LEFT),
                     'from'   => $trx->fromUser?->first_name . ' ' . $trx->fromUser?->last_name ?? 'System',
                     'to'     => $trx->toUser?->first_name . ' ' . $trx->toUser?->last_name ?? 'System',
                     'amount' => number_format($trx->amount, 2),

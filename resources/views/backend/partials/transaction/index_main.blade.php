@@ -9,7 +9,7 @@
                 <div class="d-flex align-items-center position-relative my-1">
                     <i class="ki-duotone ki-magnifier fs-3 position-absolute ms-5"><span class="path1"></span><span
                             class="path2"></span></i> <input id="packageSearch" type="text" data-kt-user-table-filter="search"
-                                                             class="form-control form-control-solid w-250px ps-13" placeholder="Search user">
+                                                             class="form-control form-control-solid w-250px ps-13" placeholder="Search ...">
                 </div>
                 <!--end::Search-->
             </div>
@@ -121,6 +121,7 @@
                            id="package_table">
                         <thead>
                         <tr class="text-start text-muted fw-bold fs-7 text-uppercase">
+                            <th>TXN ID</th>
                             <th>From</th>
                             <th>To</th>
                             <th>Amount</th>

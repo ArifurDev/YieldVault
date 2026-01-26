@@ -25,6 +25,7 @@ class getTransactionResource extends JsonResource
 
         return [
             'id'     => $this->id,
+            'txn_id' => $this->id ? "TXN-". str_pad($this->id,6,'0',STR_PAD_LEFT) : null,
             'amount' => number_format($this->amount, 2),
             'flow'   => $flow,
             'type'   => $this->type,

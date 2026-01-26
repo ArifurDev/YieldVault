@@ -81,6 +81,7 @@
                             }
                         },
                         columns: [
+                            { data: 'TXN', name: 'TXN' },
                             { data: 'from', name: 'from_user_id' },
                             { data: 'to', name: 'to_user_id' },
                             { data: 'amount', name: 'amount' },

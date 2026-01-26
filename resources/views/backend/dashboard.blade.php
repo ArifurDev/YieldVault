@@ -176,9 +176,9 @@
 
                                 <!--begin::Card toolbar-->
                                 <div class="card-toolbar">
-                <span class="badge badge-light-primary fw-bold me-auto px-4 py-3">
-                    In Progress
-                </span>
+                                <span class="badge badge-light-primary fw-bold me-auto px-4 py-3">
+                                    In Progress
+                                </span>
                                 </div>
                                 <!--end::Card toolbar-->
 
@@ -387,6 +387,7 @@
                                     <table class="table align-middle table-row-dashed fs-6 gy-5">
                                         <thead>
                                         <tr class="text-muted fw-bold fs-7 text-uppercase">
+                                            <th>TXN ID</th>
                                             <th>From</th>
                                             <th>To</th>
                                             <th>Amount</th>
@@ -576,6 +577,7 @@
 
                             table.append(`
                         <tr>
+                            <td>${trx.txn_id}</td>
                             <td>${trx.from}</td>
                             <td>${trx.to}</td>
                             <td class="fw-bold">$${trx.amount}</td>
