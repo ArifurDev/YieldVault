@@ -16,6 +16,7 @@ use App\Http\Controllers\API\V1\Manager\DashboardController;
 use App\Http\Controllers\API\V1\Manager\WalletAccountController;
 use App\Http\Controllers\API\V1\NotificationController;
 use App\Http\Controllers\API\V1\PackageController;
+use App\Http\Controllers\API\V1\PaymentReportController;
 use App\Http\Controllers\API\V1\ReferralController;
 use App\Http\Controllers\API\V1\Auth\User\ReferralController as AuthUserReferralController;
 use App\Http\Controllers\API\V1\SupportTicketController;
@@ -199,6 +200,13 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
             Route::get('/quick-stats',  'summary');
             Route::get('/activity-logs', 'ActivityLogs');
             Route::get('/recent-transaction','getRecentTransactions');
+        });
+
+        Route::prefix('payment-reports')->controller(PaymentReportController::class)->group(function () {
+            Route::get('/', 'index');
+            Route::get('/{report}',  'show');
+            Route::post('/{report}/resolve',  'resolve');
+            Route::get('/summary/stats',  'summary');
         });
 
     });
