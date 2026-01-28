@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\Backend\KycController;
 use App\Http\Controllers\Web\Backend\LevelController;
 use App\Http\Controllers\Web\Backend\NotificationController;
 use App\Http\Controllers\Web\Backend\PackageController;
+use App\Http\Controllers\Web\Backend\PaymentReportController;
 use App\Http\Controllers\Web\Backend\PermissionController;
 use App\Http\Controllers\Web\Backend\ProfileController;
 use App\Http\Controllers\Web\Backend\RoiListController;
@@ -219,5 +220,11 @@ Route::prefix('/support-tickets')->controller(SupportTicketController::class)->g
     Route::post('/{ticket}/close',  'close')->name('support-tickets.close');
 });
 
-
+// Route for payment Report
+Route::prefix('payment-reports')->name('payment-reports.')->controller(PaymentReportController::class)->group(function () {
+    Route::get('/',  'index')->name('index');
+    Route::get('/create/{ticket}', 'create')->name('create');
+    Route::post('/', 'store')->name('store');
+    Route::get('/{paymentReport}','show')->name('show');
+});
 

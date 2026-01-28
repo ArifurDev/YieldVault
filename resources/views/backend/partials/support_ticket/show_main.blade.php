@@ -227,6 +227,24 @@
                                 </span>
                             </div>
 
+                            {{-- CREATE PAYMENT REPORT --}}
+                            @if(
+                                in_array($ticket->category->value, ['deposit','withdrawal'])
+                                && $ticket->user->role !== \App\Enum\Role::MANAGER
+                            )
+                                @if(!$ticket->paymentReport)
+                                    <a href="{{ route('payment-reports.create', $ticket->id) }}"
+                                       class="btn btn-warning w-100 mb-2">
+                                        Create Payment Report
+                                    </a>
+                                @else
+                                    <button class="btn btn-outline-success w-100 mb-2" disabled>
+                                        Payment Report Created
+                                    </button>
+                                @endif
+                            @endif
+
+
                             {{-- ACTION --}}
                             @if($ticket->status !== \App\Enum\Support\Status::CLOSED)
                                 <form method="POST"

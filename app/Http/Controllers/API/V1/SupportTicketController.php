@@ -161,6 +161,78 @@ class SupportTicketController extends Controller
     /**
      * View single ticket with messages
      */
+//    public function show(Request $request,SupportTicket $ticket)
+//    {
+//        $lang = $request->header('Accept-Language', 'en');
+//
+//        try {
+//            // permission check
+//            $this->authorizeTicket($ticket);
+//
+////            // Load data
+////            $ticket->load([
+////                'user',
+////                'assignedTo',
+////
+////                // ONLY root comments
+////                'messages' => fn ($q) => $q
+////                    ->whereNull('reply_to_id')
+////                    ->oldest(),
+////
+////                'messages.sender',
+////
+////                // Replies (1 level only)
+////                'messages.replies' => fn ($q) => $q->oldest(),
+////                'messages.replies.sender',
+////            ]);
+//
+//            $ticket->load([
+//                'user',
+//                'assignedTo',
+//
+//                // Root messages only
+//                'messages' => fn ($q) => $q
+//                    ->whereNull('reply_to_id')
+//                    ->oldest(),
+//
+//                'messages.sender',
+//
+//                // recursive replies
+//                'messages.replies.sender',
+//            ]);
+//
+//            // Mark unread messages as read (user side)
+//            $ticket->messages()
+//                ->where('sender_id', '!=', auth()->id())
+//                ->where('is_read', false)
+//                ->update(['is_read' => true]);
+//
+//
+//            $message = translateHelper::translateCached(
+//                'support_ticket_details_success',
+//                'Support ticket details retrieved',
+//                $lang
+//            );
+//
+//            return $this->sendResponse(
+//                new SupportTicketDetailsResource($ticket),
+//                $message
+//            );
+//        }catch (\Exception $e){
+//            Log::error("Failed to get support ticket",[
+//                'userId' => auth()->user()->id,
+//                'message' => $e->getMessage(),
+//            ]);
+//
+//            $message = translateHelper::translateCached(
+//                'support_ticket_details_failed',
+//                'Failed to get support ticket',
+//                $lang
+//            );
+//            return $this->sendError( $message [], 500);
+//        }
+//    }
+
     public function show(Request $request,SupportTicket $ticket)
     {
         $lang = $request->header('Accept-Language', 'en');
@@ -169,39 +241,14 @@ class SupportTicketController extends Controller
             // permission check
             $this->authorizeTicket($ticket);
 
-//            // Load data
-//            $ticket->load([
-//                'user',
-//                'assignedTo',
-//
-//                // ONLY root comments
-//                'messages' => fn ($q) => $q
-//                    ->whereNull('reply_to_id')
-//                    ->oldest(),
-//
-//                'messages.sender',
-//
-//                // Replies (1 level only)
-//                'messages.replies' => fn ($q) => $q->oldest(),
-//                'messages.replies.sender',
-//            ]);
-
+            // Load ALL messages flat, with parent
             $ticket->load([
-                'user',
-                'assignedTo',
-
-                // Root messages only
                 'messages' => fn ($q) => $q
-                    ->whereNull('reply_to_id')
+                    ->with(['sender', 'parent'])
                     ->oldest(),
-
-                'messages.sender',
-
-                // 🔥 recursive replies
-                'messages.replies.sender',
             ]);
 
-            // Mark unread messages as read (user side)
+            // Mark unread messages as read
             $ticket->messages()
                 ->where('sender_id', '!=', auth()->id())
                 ->where('is_read', false)

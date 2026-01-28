@@ -106,4 +106,10 @@ class SupportTicket extends Model
 
         return $lastMessage && $lastMessage->sender_id === $this->user_id;
     }
+
+    public function paymentReport()
+    {
+        return $this->hasOne(PaymentReport::class, 'ticket_id');
+    }
+
 }

@@ -37,10 +37,12 @@ class SupportTicketDetailsResource extends JsonResource
             'created_at' => $this->created_at->format('d M Y, h:i A'),
             'updated_at' => $this->updated_at->diffForHumans(),
 
-            // 👇 Messages
+            // Messages
             'messages' => SupportMessageResource::collection(
                 $this->whenLoaded('messages')
             ),
         ];
+
+
     }
 }

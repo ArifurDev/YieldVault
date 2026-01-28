@@ -16,42 +16,52 @@ class SupportMessage extends Model
         'attachment',
     ];
 
-    /**
-     * Message sender (user / manager / admin)
-     */
-    public function sender()
-    {
-        return $this->belongsTo(User::class, 'sender_id');
-    }
-
-    /**
-     * Parent support ticket
-     */
+//    /**
+//     * Message sender (user / manager / admin)
+//     */
+//    public function sender()
+//    {
+//        return $this->belongsTo(User::class, 'sender_id');
+//    }
+//
+//    /**
+//     * Parent support ticket
+//     */
     public function ticket()
     {
         return $this->belongsTo(SupportTicket::class, 'support_ticket_id');
     }
 
-    // Reply relations
+   // Reply relations
     public function replyTo()
     {
         return $this->belongsTo(SupportMessage::class, 'reply_to_id');
     }
+//
+//    public function replies()
+//    {
+//        return $this->hasMany(self::class, 'reply_to_id')
+//            ->with(['sender', 'replies']) // 🔥 recursion
+//            ->oldest();
+//    }
+//
+//    public function parent()
+//    {
+//        return $this->belongsTo(
+//            SupportMessage::class,
+//            'reply_to_id'
+//        );
+//    }
 
-    public function replies()
+
+    public function sender()
     {
-        return $this->hasMany(
-            SupportMessage::class,
-            'reply_to_id'
-        )->with('replies'); //  recursion
+        return $this->belongsTo(User::class, 'sender_id');
     }
 
     public function parent()
     {
-        return $this->belongsTo(
-            SupportMessage::class,
-            'reply_to_id'
-        );
+        return $this->belongsTo(self::class, 'reply_to_id');
     }
 
 }
