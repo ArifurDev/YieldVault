@@ -206,7 +206,6 @@ Route::group(['middleware' => ['jwt.verify','daily.streak']], function () {
             Route::get('/', 'index');
             Route::get('/{report}',  'show');
             Route::post('/{report}/resolve',  'resolve');
-            Route::get('/summary/stats',  'summary');
         });
 
     });

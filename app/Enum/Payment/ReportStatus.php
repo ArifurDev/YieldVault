@@ -2,6 +2,8 @@
 
 namespace App\Enum\Payment;
 
+use App\Helpers\translateHelper;
+
 enum ReportStatus : string
 {
     case OPEN        = 'open';
@@ -9,13 +11,17 @@ enum ReportStatus : string
     case RESOLVED    = 'resolved';
     case REJECTED    = 'rejected';
 
-    public function label(): string
+    public function label(string $lang = 'en'): string
     {
-        return match ($this) {
-            self::OPEN        => 'Open',
-            self::IN_PROGRESS => 'In Progress',
-            self::RESOLVED    => 'Resolved',
-            self::REJECTED    => 'Rejected',
-        };
+        return translateHelper::translateCached(
+            'payment_report_status_' . $this->value,
+            match ($this) {
+                self::OPEN        => 'Open',
+                self::IN_PROGRESS => 'In Progress',
+                self::RESOLVED    => 'Resolved',
+                self::REJECTED    => 'Rejected',
+            },
+            $lang
+        );
     }
 }
