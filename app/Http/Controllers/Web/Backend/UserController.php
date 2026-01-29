@@ -30,6 +30,15 @@ class UserController extends Controller
             $data = User::where('role', '!=', 'admin')->latest();
 
             return DataTables::of($data)
+                ->filter(function ($query) use ($request) {
+                    if ($search = $request->get('search')['value'] ?? null) {
+
+                        $query->where(function ($q) use ($search) {
+                            $q->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"])
+                                ->orWhere('email', 'LIKE', "%{$search}%");
+                        });
+                    }
+                })
 //                ->addIndexColumn()
                 ->addColumn('user', function ($row) {
                     $fullName = $row->first_name . ' ' . $row->last_name;

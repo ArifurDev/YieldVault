@@ -11,11 +11,11 @@
                 <!--end::Modal title-->
 
                 <!--begin::Close-->
-                <div class="btn btn-icon btn-sm btn-active-icon-primary"
-                     data-kt-users-modal-action="close">
-                    <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span
-                            class="path2"></span></i>
-                </div>
+{{--                <div class="btn btn-icon btn-sm btn-active-icon-primary"--}}
+{{--                     data-kt-users-modal-action="close">--}}
+{{--                    <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span--}}
+{{--                            class="path2"></span></i>--}}
+{{--                </div>--}}
                 <!--end::Close-->
             </div>
             <!--end::Modal header-->
@@ -194,11 +194,6 @@
 
                     <!--begin::Actions-->
                     <div class="text-center pt-10">
-                        <button type="reset" class="btn btn-light me-3"
-                                data-kt-users-modal-action="cancel">
-                            Discard
-                        </button>
-
                         <button type="submit" class="btn btn-primary"
                                 data-kt-users-modal-action="submit">
                                             <span class="indicator-label">

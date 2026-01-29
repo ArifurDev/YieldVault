@@ -20,6 +20,22 @@ class KycController extends Controller
             $data = KycDocument::with('user')->latest();
 
             return DataTables::of($data)
+                ->filter(function ($query) use ($request) {
+
+                    $search = $request->get('search')['value'] ?? null;
+
+                    if ($search) {
+                        $query->whereHas('user', function ($q) use ($search) {
+                            $q->whereRaw(
+                                "CONCAT(first_name, ' ', last_name) LIKE ?",
+                                ["%{$search}%"]
+                            )
+                                ->orWhere('email', 'LIKE', "%{$search}%");
+                        })
+                            ->orWhere('document_type', 'LIKE', "%{$search}%")
+                            ->orWhere('status', 'LIKE', "%{$search}%");
+                    }
+                })
 //                ->addIndexColumn()
                 ->addColumn('user', function ($row) {
                     $fullName = $row?->user->first_name . ' ' . $row?->user->last_name;

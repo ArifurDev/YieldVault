@@ -9,7 +9,7 @@
                 <div class="d-flex align-items-center position-relative my-1">
                     <i class="ki-duotone ki-magnifier fs-3 position-absolute ms-5"><span class="path1"></span><span
                             class="path2"></span></i> <input id="packageSearch" type="text" data-kt-user-table-filter="search"
-                                                             class="form-control form-control-solid w-250px ps-13" placeholder="Search user">
+                                                             class="form-control form-control-solid w-250px ps-13" placeholder="Search ...">
                 </div>
                 <!--end::Search-->
             </div>
@@ -21,12 +21,6 @@
                 <div class="d-flex justify-content-end" data-kt-user-table-toolbar="base"
                      data-select2-id="select2-data-195-9exk">
 
-                    {{--                    <!--begin::Add user-->--}}
-                    {{--                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"--}}
-                    {{--                            data-bs-target="#kt_modal_add_user">--}}
-                    {{--                        <i class="ki-duotone ki-plus fs-2"></i> Add Level--}}
-                    {{--                    </button>--}}
-                    <!--end::Add user-->
                 </div>
                 <!--end::Toolbar-->
 

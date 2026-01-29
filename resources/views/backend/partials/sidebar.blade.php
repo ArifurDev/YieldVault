@@ -233,45 +233,6 @@
             <!--end:Menu item-->
 
             <!--begin:Menu item-->
-            <div class="menu-item">
-                <a class="menu-link {{ request()->routeIs(['support-tickets.*']) ? 'active' : '' }}"
-                   href="{{ route('support-tickets.index') }}">
-                    <span class="menu-icon">
-                    <i class="ki-duotone ki-file-sheet fs-2">
-                         <span class="path1"></span>
-                         <span class="path2"></span>
-                    </i>
-                    </span>
-                    <span class="menu-title">Support Tickets</span>
-                </a>
-            </div>
-            <!--end:Menu item-->
-            <!--begin:Menu item-->
-            <div class="menu-item">
-                <a class="menu-link {{ request()->routeIs(['payment-reports.*']) ? 'active' : '' }}"
-                   href="{{ route('payment-reports.index') }}">
-                    <span class="menu-icon">
-                    <i class="ki-duotone ki-file-sheet fs-2">
-                         <span class="path1"></span>
-                         <span class="path2"></span>
-                    </i>
-                    </span>
-                    <span class="menu-title">Payment Reports</span>
-                </a>
-            </div>
-            <!--end:Menu item-->
-
-
-
-
-            <!--begin:Menu item-->
-            <div class="menu-item pt-5">
-                <div class="menu-content">
-                    <span class="fw-bold text-muted text-uppercase fs-7">Tasks Management</span>
-                </div>
-            </div><!--end:Menu item-->
-
-            <!--begin:Menu item-->
             <div data-kt-menu-trigger="click"
                  class="menu-item menu-accordion {{ request()->routeIs('tasks.*','daily.task.*') ? 'show' : '' }}">
 
@@ -332,13 +293,28 @@
             </div><!--end:Menu item-->
 
             <!--begin:Menu item-->
-            <div data-kt-menu-trigger="click"
-                 class="menu-item menu-accordion {{ request()->routeIs('wallet.*','transaction.*') ? 'show' : '' }}">
-
-                <!--begin:Menu link-->
-                <span class="menu-link">
+            <div class="menu-item">
+                <a class="menu-link {{ request()->routeIs('wallet.*') ? 'active' : '' }}"
+                   href="{{ route('wallet.index') }}">
                     <span class="menu-icon">
-                        <i class="ki-duotone ki-element-plus fs-2">
+                        <i class="ki-duotone ki-wallet fs-2">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                         <span class="path3"></span>
+                         <span class="path4"></span>
+                        </i>
+                    </span>
+                    <span class="menu-title">Wallets</span>
+                </a>
+            </div>
+            <!--end:Menu item-->
+
+            <!--begin:Menu item-->
+            <div class="menu-item">
+                <a class="menu-link {{ request()->routeIs('transaction.*') ? 'active' : '' }}"
+                   href="{{ route('transaction.index') }}">
+                    <span class="menu-icon">
+                        <i class="ki-duotone ki-two-credit-cart fs-2">
                              <span class="path1"></span>
                              <span class="path2"></span>
                              <span class="path3"></span>
@@ -346,42 +322,102 @@
                              <span class="path5"></span>
                         </i>
                     </span>
-                    <span class="menu-title">Wallet Management</span>
-                    <span class="menu-arrow"></span>
-                </span>
-                <!--end:Menu link-->
-
-                <!--begin:Menu sub-->
-                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('wallet.*','transaction.*') ? 'show' : '' }}">
-
-                    <!--begin:Page List-->
-                    <div class="menu-item mb-1">
-                        <a class="menu-link {{ request()->routeIs('wallet.*') ? 'active' : '' }}"
-                           href="{{ route('wallet.index') }}">
-                            <span class="menu-bullet">
-                                <span class="bullet bullet-dot"></span>
-                            </span>
-                            <span class="menu-title">List of Wallet</span>
-                        </a>
-                    </div>
-                    <!--end:Page List-->
-
-                    <!--begin:Create Page-->
-                    <div class="menu-item mb-1">
-                        <a class="menu-link {{ request()->routeIs('transaction.*') ? 'active' : '' }}"
-                           href="{{ route('transaction.index') }}">
-                            <span class="menu-bullet">
-                                <span class="bullet bullet-dot"></span>
-                            </span>
-                            <span class="menu-title">Transaction</span>
-                        </a>
-                    </div>
-                    <!--end:Create Page-->
-
-                </div>
-                <!--end:Menu sub-->
+                    <span class="menu-title">Transaction</span>
+                </a>
             </div>
             <!--end:Menu item-->
+
+
+            <!--begin:Menu item-->
+            <div class="menu-item pt-5">
+                <div class="menu-content">
+                    <span class="fw-bold text-muted text-uppercase fs-7">Support Management</span>
+                </div>
+            </div><!--end:Menu item-->
+
+            <!--begin:Menu item-->
+            <div class="menu-item">
+                <a class="menu-link {{ request()->routeIs(['support-tickets.*']) ? 'active' : '' }}"
+                   href="{{ route('support-tickets.index') }}">
+                    <span class="menu-icon">
+                        <i class="ki-duotone ki-directbox-default fs-2">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                         <span class="path3"></span>
+                         <span class="path4"></span>
+                        </i>
+                    </span>
+                    <span class="menu-title">Support Tickets</span>
+                </a>
+            </div>
+            <!--end:Menu item-->
+            <!--begin:Menu item-->
+            <div class="menu-item">
+                <a class="menu-link {{ request()->routeIs(['payment-reports.*']) ? 'active' : '' }}"
+                   href="{{ route('payment-reports.index') }}">
+                    <span class="menu-icon">
+                    <i class="ki-duotone ki-information fs-2">
+                     <span class="path1"></span>
+                     <span class="path2"></span>
+                     <span class="path3"></span>
+                    </i>
+                    </span>
+                    <span class="menu-title">Payment Reports</span>
+                </a>
+            </div>
+            <!--end:Menu item-->
+
+{{--            <!--begin:Menu item-->--}}
+{{--            <div data-kt-menu-trigger="click"--}}
+{{--                 class="menu-item menu-accordion {{ request()->routeIs('wallet.*','transaction.*') ? 'show' : '' }}">--}}
+
+{{--                <!--begin:Menu link-->--}}
+{{--                <span class="menu-link">--}}
+{{--                    <span class="menu-icon">--}}
+{{--                        <i class="ki-duotone ki-element-plus fs-2">--}}
+{{--                             <span class="path1"></span>--}}
+{{--                             <span class="path2"></span>--}}
+{{--                             <span class="path3"></span>--}}
+{{--                             <span class="path4"></span>--}}
+{{--                             <span class="path5"></span>--}}
+{{--                        </i>--}}
+{{--                    </span>--}}
+{{--                    <span class="menu-title">Wallet Management</span>--}}
+{{--                    <span class="menu-arrow"></span>--}}
+{{--                </span>--}}
+{{--                <!--end:Menu link-->--}}
+
+{{--                <!--begin:Menu sub-->--}}
+{{--                <div class="menu-sub menu-sub-accordion {{ request()->routeIs('wallet.*','transaction.*') ? 'show' : '' }}">--}}
+
+{{--                    <!--begin:Page List-->--}}
+{{--                    <div class="menu-item mb-1">--}}
+{{--                        <a class="menu-link {{ request()->routeIs('wallet.*') ? 'active' : '' }}"--}}
+{{--                           href="{{ route('wallet.index') }}">--}}
+{{--                            <span class="menu-bullet">--}}
+{{--                                <span class="bullet bullet-dot"></span>--}}
+{{--                            </span>--}}
+{{--                            <span class="menu-title">List of Wallet</span>--}}
+{{--                        </a>--}}
+{{--                    </div>--}}
+{{--                    <!--end:Page List-->--}}
+
+{{--                    <!--begin:Create Page-->--}}
+{{--                    <div class="menu-item mb-1">--}}
+{{--                        <a class="menu-link {{ request()->routeIs('transaction.*') ? 'active' : '' }}"--}}
+{{--                           href="{{ route('transaction.index') }}">--}}
+{{--                            <span class="menu-bullet">--}}
+{{--                                <span class="bullet bullet-dot"></span>--}}
+{{--                            </span>--}}
+{{--                            <span class="menu-title">Transaction</span>--}}
+{{--                        </a>--}}
+{{--                    </div>--}}
+{{--                    <!--end:Create Page-->--}}
+
+{{--                </div>--}}
+{{--                <!--end:Menu sub-->--}}
+{{--            </div>--}}
+{{--            <!--end:Menu item-->--}}
 
 {{--            <!--begin:ROI Health-->--}}
 {{--            <div data-kt-menu-trigger="click"--}}
@@ -436,6 +472,9 @@
 {{--            <!--end:ROI Health-->--}}
 
 
+
+
+            <!--begin:Menu item-->
 
             <!--begin:Menu item-->
             <div class="menu-item pt-5">

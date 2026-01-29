@@ -140,6 +140,10 @@ class WalletController extends Controller
                 ]);
 
             return DataTables::of($query)
+                // Amount
+                ->addColumn('tnx_id', fn ($row) =>
+                    "TXN-". str_pad( $row->id,6,'0',STR_PAD_LEFT)
+                )
 
                 // Amount
                 ->addColumn('amount', fn ($row) =>
@@ -175,7 +179,7 @@ class WalletController extends Controller
                 $row->created_at->format('Y-m-d H:i')
                 )
 
-                ->rawColumns(['amount', 'from', 'to', 'flow', 'source'])
+                ->rawColumns(['amount', 'from', 'to', 'flow', 'source','tnx_id'])
                 ->make(true);
         }
 

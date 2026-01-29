@@ -13,10 +13,14 @@
         /* small KYC preview */
         .kyc-image {
             width: 100%;
+            max-width: 420px;   /* 🔥 control image size */
+            height: auto;
             border-radius: 12px;
             border: 1px solid #eee;
             cursor: zoom-in;
+            display: block;
         }
+
 
         /* fullscreen overlay */
         .image-lightbox {
@@ -100,7 +104,7 @@
                         <li class="breadcrumb-item text-muted">
                             <a href="{{ route('kyc.index') }}" class="text-muted text-hover-primary">List of KYC</a>
                         </li>
-                        <li class="breadcrumb-item text-dark">Kyc Document Edit Edit</li>
+                        <li class="breadcrumb-item text-dark">Kyc Document Edit</li>
                     </ul>
                     <!--end::Breadcrumb-->
                 </div>

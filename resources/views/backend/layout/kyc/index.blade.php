@@ -32,7 +32,7 @@
                         </li>
 
                         <li class="breadcrumb-item text-dark">
-                            Users
+                            KYC Documents
                         </li>
 
                     </ul>

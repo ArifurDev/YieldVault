@@ -94,8 +94,6 @@
                 </div>
 
                 <div class="text-center pt-10">
-                    <button type="reset" class="btn btn-light me-3">Discard</button>
-
                     <button type="submit" class="btn btn-primary" id="submit-btn">
                         <span class="indicator-label">Submit</span>
                         <span class="indicator-progress">Please wait...

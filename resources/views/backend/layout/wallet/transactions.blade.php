@@ -1,3 +1,4 @@
+
 @extends('backend.app')
 
 @section('title', 'Wallet Transaction History')
@@ -5,113 +6,63 @@
 @push('style')
     <link rel="stylesheet"
           href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+    <style>
+        .dataTables_filter {
+            display: none !important;
+        }
+    </style>
 @endpush
 
 @section('content')
+    <div class="content fs-6 d-flex flex-column flex-column-fluid" id="kt_content">
 
-    <div class="content fs-6 d-flex flex-column-fluid">
-        <div class="container-xxl">
+        {{-- Toolbar --}}
+        <div class="toolbar" id="kt_toolbar">
+            <div class="container-fluid d-flex flex-stack flex-wrap">
+                <div class="d-flex flex-column align-items-start">
+                    <h1 class="text-dark fw-bold fs-2 mb-1">
+                        Wallet Transaction History
+                    </h1>
 
-            {{-- admin fund action --}}
-            <div class="card mb-6">
-                <div class="card-header">
-                    <h3 class="card-title">Admin Wallet Action</h3>
-                </div>
-
-                <div class="card-body">
-                    <form id="adminWalletActionForm">
-                        @csrf
-
-                        {{-- TARGET USER (CURRENT WALLET OWNER) --}}
-                        <input type="hidden" name="user_id" value="{{ $user->id }}">
-
-                        <div class="row g-4">
-
-                            {{-- Amount --}}
-                            <div class="col-md-3">
-                                <label class="form-label">Amount</label>
-                                <input type="number" step="0.01" name="amount"
-                                       class="form-control" required>
-                            </div>
-
-                            {{-- Action --}}
-                            <div class="col-md-3">
-                                <label class="form-label">Action</label>
-                                <select name="action" class="form-select" required>
-                                    <option value="{{ \App\Enum\Wallet\TransactionType::CREDIT->value }}">
-                                        Give Money
-                                    </option>
-                                    <option value="{{ \App\Enum\Wallet\TransactionType::DEBIT->value }}">
-                                        Take Money
-                                    </option>
-                                </select>
-                            </div>
-
-                            {{-- Submit --}}
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100">
-                                    Submit
-                                </button>
-                            </div>
-
-                        </div>
-                    </form>
-
+                    <ul class="breadcrumb fw-semibold fs-base">
+                        <li class="breadcrumb-item text-muted">
+                            <a href="{{ route('wallet.index') }}"
+                               class="text-muted text-hover-primary">
+                                Wallets
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item text-dark">
+                            Transaction History
+                        </li>
+                    </ul>
                 </div>
             </div>
-
-
-            <div class="card">
-                <div class="card-header border-0 pt-6">
-                    <div class="card-title">
-                        <div class="d-flex align-items-center position-relative my-1">
-                            <i class="ki-duotone ki-magnifier fs-3 position-absolute ms-5"></i>
-{{--                            <input type="text"--}}
-{{--                                   data-kt-wallet-transaction-filter="search"--}}
-{{--                                   class="form-control form-control-solid w-300px ps-13"--}}
-{{--                                   placeholder="Search transaction">--}}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-body py-4">
-                    <div class="table-responsive">
-                        <table class="table align-middle table-row-dashed fs-6 gy-5"
-                               id="wallet_transaction_table">
-                            <thead>
-                            <tr class="text-muted fw-bold fs-7 text-uppercase">
-                                <th>From</th>
-                                <th>To</th>
-                                <th>Amount</th>
-                                <th>Type</th>
-                                <th>Source</th>
-                                <th>Date</th>
-                            </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-
         </div>
-    </div>
 
+        {{-- Content --}}
+        <div class="post fs-6 d-flex flex-column-fluid" id="kt_post">
+            @include('backend.partials.wallet.history_index_main')
+        </div>
+
+    </div>
 @endsection
 
 @push('script')
+    {{-- DataTables --}}
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
-        $(function () {
+        $(document).ready(function () {
 
             let table = $('#wallet_transaction_table').DataTable({
                 processing: true,
                 serverSide: true,
                 ajax: "{{ route('wallet.show', $user->id) }}",
+                order: [[5, 'desc']],
                 columns: [
+                    { data: 'tnx_id', name: 'tnx_id' },
                     { data: 'from', name: 'from_users.first_name' },
                     { data: 'to', name: 'to_users.first_name' },
                     { data: 'amount', name: 'wallet_transactions.amount' },
@@ -121,25 +72,22 @@
                 ],
             });
 
-            $('input[data-kt-wallet-transaction-filter="search"]').keyup(function () {
+            // Search
+            $('input[data-kt-wallet-transaction-filter="search"]').on('keyup', function () {
                 table.search(this.value).draw();
             });
 
-            // Admin Wallet Action Form
+            // Admin Wallet Action
             $('#adminWalletActionForm').on('submit', function (e) {
                 e.preventDefault();
 
                 $.ajax({
                     url: "{{ route('wallet.admin.action') }}",
-                    type: "POST",
+                    method: "POST",
                     data: $(this).serialize(),
                     success: function (res) {
                         toastr.success(res.message);
-
-                        // reload datatable
                         table.ajax.reload(null, false);
-
-                        // reset form
                         $('#adminWalletActionForm')[0].reset();
                     },
                     error: function (xhr) {
@@ -149,8 +97,7 @@
                     }
                 });
             });
-
         });
     </script>
-
 @endpush
+

@@ -3,81 +3,94 @@
 @section('title', 'Wallet Management')
 
 @push('style')
-    <link rel="stylesheet"
-          href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+    <style>
+        .dataTables_filter {
+            display: none !important;
+        }
+    </style>
 @endpush
 
 @section('content')
+    <!--begin::Content-->
+    <div class="content fs-6 d-flex flex-column flex-column-fluid" id="kt_content">
+        <!--begin::Toolbar-->
+        <div class="toolbar" id="kt_toolbar">
+            <div class=" container-fluid  d-flex flex-stack flex-wrap flex-sm-nowrap">
+                <!--begin::Info-->
+                <div class="d-flex flex-column align-items-start justify-content-center flex-wrap me-2">
+                    <!--begin::Title-->
+                    <h1 class="text-dark fw-bold my-1 fs-2">
+                        List of Wallets </h1>
+                    <!--end::Title-->
 
-    <div class="content fs-6 d-flex flex-column-fluid">
-        <div class="container-xxl">
+                    <!--begin::Breadcrumb-->
+                    <ul class="breadcrumb fw-semibold fs-base my-1">
+                        <li class="breadcrumb-item text-muted">
+                            <a href="{{ route('dashboard') }}" class="text-muted text-hover-primary">Home </a>
+                        </li>
 
-            <div class="card">
-                <div class="card-header border-0 pt-6">
-                    <div class="card-title">
-                        <div class="d-flex align-items-center position-relative my-1">
-                            <i class="ki-duotone ki-magnifier fs-3 position-absolute ms-5"></i>
-{{--                            <input type="text"--}}
-{{--                                   data-kt-wallet-table-filter="search"--}}
-{{--                                   class="form-control form-control-solid w-250px ps-13"--}}
-{{--                                   placeholder="Search wallet">--}}
-                        </div>
-                    </div>
+                        <li class="breadcrumb-item text-dark">
+                            Wallets
+                        </li>
+
+                    </ul>
+                    <!--end::Breadcrumb-->
                 </div>
-
-                <div class="card-body py-4">
-                    <div class="table-responsive">
-                        <table class="table align-middle table-row-dashed fs-6 gy-5"
-                               id="wallet_table">
-                            <thead>
-                            <tr class="text-muted fw-bold fs-7 text-uppercase">
-                                <th>User</th>
-                                <th>Role</th>
-                                <th>Balance</th>
-                                <th>Status</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
+                <!--end::Info-->
 
             </div>
         </div>
-    </div>
+        <!--end::Toolbar-->
 
+        <!--begin::Post-->
+        <div class="post fs-6 d-flex flex-column-fluid" id="kt_post">
+            <!--begin::Container-->
+            @include('backend.partials.wallet.index_main')
+            <!--end::Post-->
+
+
+        </div>
+        <!--end::Content-->
+
+        @push('script')
+            <script src="{{ asset('backend/assets') . '/js/custom/apps/user-management/users/list/table.js' }}"></script>
+            <script src="{{ asset('backend/assets') . '/js/custom/apps/user-management/users/list/export-users.js' }}"></script>
+            <script src="{{ asset('backend/assets') . '/js/custom/apps/user-management/users/list/add.js' }}"></script>
+            <script src="{{ asset('backend/assets') . '/js/custom/utilities/modals/users-search.js' }}"></script>
+
+            {{--  Include DataTables --}}
+            <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+            <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+            <script>
+                $(function () {
+
+                            let table = $('#wallet_table').DataTable({
+                                processing: true,
+                                serverSide: true,
+                                ajax: "{{ route('wallet.index') }}",
+                                columns: [
+                                    {data: 'user', name: 'user'},
+                                    {data: 'role', name: 'role'},
+                                    {data: 'balance', name: 'balance'},
+                                    {data: 'status', name: 'status'},
+                                    {data: 'actions', orderable: false, searchable: false},
+                                ],
+                                drawCallback: function () {
+                                    if (typeof KTMenu !== 'undefined') {
+                                        KTMenu.createInstances();
+                                    }
+                                }
+                            });
+
+                            $('input[data-kt-wallet-table-filter="search"]').keyup(function () {
+                                table.search(this.value).draw();
+                            });
+
+                        });
+            </script>
+
+    @endpush
 @endsection
-
-@push('script')
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
-    <script>
-        $(function () {
-
-            let table = $('#wallet_table').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: "{{ route('wallet.index') }}",
-                columns: [
-                    {data: 'user', name: 'user'},
-                    {data: 'role', name: 'role'},
-                    {data: 'balance', name: 'balance'},
-                    {data: 'status', name: 'status'},
-                    {data: 'actions', orderable: false, searchable: false},
-                ],
-                drawCallback: function () {
-                    if (typeof KTMenu !== 'undefined') {
-                        KTMenu.createInstances();
-                    }
-                }
-            });
-
-            $('input[data-kt-wallet-table-filter="search"]').keyup(function () {
-                table.search(this.value).draw();
-            });
-
-        });
-    </script>
-@endpush

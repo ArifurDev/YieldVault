@@ -228,3 +228,7 @@ Route::prefix('payment-reports')->name('payment-reports.')->controller(PaymentRe
     Route::get('/{paymentReport}','show')->name('show');
 });
 
+
+
+
+// manager management
