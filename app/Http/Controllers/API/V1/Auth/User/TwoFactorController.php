@@ -95,7 +95,7 @@ class TwoFactorController extends Controller
             }
 
             if ($validated['email']) {
-                $user->two_factor_email = $request->email;
+                $user->two_factor_email = $validated['email'];
                 $user->save();
             }
             // OTP send
