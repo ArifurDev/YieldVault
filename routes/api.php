@@ -250,3 +250,20 @@ Route::get('/test', function (Request $request) {
        'title' =>$message,
    ]);
 });
+
+
+Route::post('/test-mail', function (Request $request) {
+
+    $request->validate([
+        'email' => 'required|email',
+    ]);
+
+    Mail::raw('This is a test email from Laravel 🚀', function ($message) use ($request) {
+        $message->to($request->email)
+            ->subject('Test Mail');
+    });
+
+    return response()->json([
+        'message' => 'Test mail sent successfully!'
+    ]);
+});

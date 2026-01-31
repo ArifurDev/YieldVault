@@ -43,10 +43,10 @@
                 <!--begin:Menu link-->
                 <span class="menu-link">
                     <span class="menu-icon">
-                        <i class="ki-duotone ki-shield-tick fs-2">
-                            <span class="path1"></span>
-                            <span class="path2"></span>
-                        </i>
+                       <i class="ki-duotone ki-user fs-2">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                       </i>
                     </span>
                     <span class="menu-title">User Management</span>
                     <span class="menu-arrow"></span>
@@ -109,6 +109,25 @@
             </div>
             <!--end:Menu item-->
 
+
+            <!--begin:Menu item-->
+            <div class="menu-item">
+                <a class="menu-link {{ request()->routeIs(['manager.*']) ? 'active' : '' }}"
+                   href="{{ route('manager.index') }}">
+                    <span class="menu-icon">
+                       <i class="ki-duotone ki-people fs-2">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                         <span class="path3"></span>
+                         <span class="path4"></span>
+                         <span class="path5"></span>
+                       </i>
+                    </span>
+                    <span class="menu-title">Manager Management</span>
+                </a>
+            </div>
+            <!--end:Menu item-->
+
             <!--begin:Menu item-->
             <div data-kt-menu-trigger="click"
                  class="menu-item menu-accordion {{ request()->routeIs('dynamic-pages.*') ? 'show' : '' }}">
@@ -116,12 +135,9 @@
                 <!--begin:Menu link-->
                 <span class="menu-link">
                     <span class="menu-icon">
-                        <i class="ki-duotone ki-element-plus fs-2">
-                            <span class="path1"></span>
-                            <span class="path2"></span>
-                            <span class="path3"></span>
-                            <span class="path4"></span>
-                            <span class="path5"></span>
+                        <i class="ki-duotone ki-add-folder fs-2">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
                         </i>
                     </span>
                     <span class="menu-title">Dynamic Pages</span>
@@ -166,10 +182,11 @@
                 <a class="menu-link {{ request()->routeIs(['kyc.*']) ? 'active' : '' }}"
                    href="{{ route('kyc.index') }}">
                     <span class="menu-icon">
-                    <i class="ki-duotone ki-file-sheet fs-2">
+                        <i class="ki-duotone ki-tablet-ok fs-2">
                          <span class="path1"></span>
                          <span class="path2"></span>
-                    </i>
+                         <span class="path3"></span>
+                        </i>
                     </span>
                     <span class="menu-title">KYC Management</span>
                 </a>
@@ -185,13 +202,10 @@
                 <!--begin:Menu link-->
                 <span class="menu-link">
                     <span class="menu-icon">
-                        <i class="ki-duotone ki-element-plus fs-2">
-                             <span class="path1"></span>
-                             <span class="path2"></span>
-                             <span class="path3"></span>
-                             <span class="path4"></span>
-                             <span class="path5"></span>
-                        </i>
+                       <i class="ki-duotone ki-abstract-26 fs-2">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                       </i>
                     </span>
                     <span class="menu-title">Level Management</span>
                     <span class="menu-arrow"></span>

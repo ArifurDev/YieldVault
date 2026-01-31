@@ -27,7 +27,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data = User::where('role', '!=', 'admin')->latest();
+            $data = User::where('role', 'user')->latest();
 
             return DataTables::of($data)
                 ->filter(function ($query) use ($request) {

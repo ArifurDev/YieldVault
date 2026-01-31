@@ -7,6 +7,7 @@ use App\Http\Controllers\Web\Backend\DashboardController;
 use App\Http\Controllers\Web\Backend\DynamicPageController;
 use App\Http\Controllers\Web\Backend\KycController;
 use App\Http\Controllers\Web\Backend\LevelController;
+use App\Http\Controllers\Web\Backend\ManagerController;
 use App\Http\Controllers\Web\Backend\NotificationController;
 use App\Http\Controllers\Web\Backend\PackageController;
 use App\Http\Controllers\Web\Backend\PaymentReportController;
@@ -57,6 +58,15 @@ Route::controller(UserController::class)->group(function () {
     Route::middleware(['role_or_permission:user edit'])->get('/user/{id}/edit',  'edit')->name('user.edit');
     Route::middleware(['role_or_permission:user update'])->put('/user/{id}/update',  'update')->name('user.update');
     Route::middleware(['role_or_permission:user delete'])->delete('/user/{id}/delete',  'delete')->name('user.delete');
+});
+
+Route::controller(ManagerController::class)->group(function () {
+    Route::middleware(['role_or_permission:user list'])->get('/manager', 'index')->name('manager.index');
+    Route::middleware(['role_or_permission:user create'])->post('/manager', 'store')->name('manager.store');
+    Route::middleware(['role_or_permission:user show'])->get('/manager/{id}/show', 'show')->name('manager.show');
+    Route::middleware(['role_or_permission:user edit'])->get('/manager/{id}/edit',  'edit')->name('manager.edit');
+    Route::middleware(['role_or_permission:user update'])->put('/manager/{id}/update',  'update')->name('manager.update');
+    Route::middleware(['role_or_permission:user delete'])->delete('/manager/{id}/delete',  'delete')->name('manager.delete');
 });
 
 //! Route for role management
@@ -227,8 +237,5 @@ Route::prefix('payment-reports')->name('payment-reports.')->controller(PaymentRe
     Route::post('/', 'store')->name('store');
     Route::get('/{paymentReport}','show')->name('show');
 });
-
-
-
 
 // manager management
