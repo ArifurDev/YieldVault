@@ -163,9 +163,9 @@ Route::get('/admin/managers', [UserController::class, 'managers'])->name('admin.
 //    return view('backend.notifications.index');
 //})->name('admin.notifications.index');
 
-
 Route::prefix('/notification')->controller(NotificationController::class)->group(function () {
     Route::get('/', 'index')->name('notification.index');
+    Route::get('/all', 'allNotifications')->name('notification.all');
     // Read single OR all
     Route::post('/read/{id?}','readNotifications')->name('notification.read');
 });
