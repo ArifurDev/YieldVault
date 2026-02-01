@@ -4,6 +4,8 @@ namespace App\Http\Resources\Api\V1\Profile;
 
 use App\Helpers\helpers;
 use App\Helpers\translateHelper;
+use App\Models\DailyTaskLog;
+use App\Models\Level;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
@@ -33,6 +35,17 @@ class getResource extends JsonResource
             $lang
         );
 
+
+        // XP calculation
+        $userXp = DailyTaskLog::where('user_id', $this->id)
+            ->sum('xp_rewarded') ?? 0;
+
+        // Current level
+        $currentLevel = Level::where('is_active', true)
+            ->where('required_xp', '<=', $userXp)
+            ->orderByDesc('required_xp')
+            ->first();
+
 //        return parent::toArray($request);
         return [
             'id'            => $this->id,
@@ -42,7 +55,25 @@ class getResource extends JsonResource
             'avatar'        => $this->avatar ? Helpers::generateTempURL($this->avatar,config('app.file_system')) : null,
             'role'          => $this->role,
             'is_notify'     => (bool)$this->is_notify,
-            'kyc_status'    => $this->kyc_status ?? null
+            'kyc_status'    => $this->kyc_status ?? null,
+            //  XP + LEVEL (FINAL)
+            'xp' => $userXp,
+
+            'level' => $currentLevel ? [
+                'id'   => $currentLevel->id,
+                'name' => translateHelper::translateCached(
+                    'level_name_' . md5($currentLevel->id),
+                    $currentLevel->name,
+                    $lang
+                ),
+            ] : [
+                'id'   => 0,
+                'name' => translateHelper::translateCached(
+                    'level_starter',
+                    'Starter',
+                    $lang
+                ),
+            ],
         ];
     }
 }
