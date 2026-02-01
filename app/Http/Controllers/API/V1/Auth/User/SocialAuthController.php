@@ -25,12 +25,32 @@ class SocialAuthController extends Controller
             $provider      = $validated['provider'];
             $socialiteUser = Socialite::driver($provider)->stateless()->userFromToken($validated['token']);
 
+            // Get social user from token
+            if (!$socialiteUser) {
+                return $this->sendError(
+                    translateHelper::translateCached(
+                        'invalid_social_token',
+                        'Invalid social token.',
+                        $lang
+                    ),[], 401
+                );
+            }
+
+            // Some providers (Apple) may not return email
+            if (!$socialiteUser->getEmail()) {
+                return $this->sendError(
+                    translateHelper::translateCached(
+                        'email_required',
+                        'Email permission is required.',
+                        $lang
+                    ), [],422
+                );
+            }
+
             if ($socialiteUser)
             {
                 // check provider and provider id exist or not
-                $user = User::where('email',$socialiteUser->getEmail())->where('provider', $provider)
-                    ->where('provider_id', $socialiteUser->getId())
-                    ->first();
+                $user = User::where('email', $socialiteUser->getEmail())->first();
 
                 $isNewUser = false;
 
@@ -53,6 +73,14 @@ class SocialAuthController extends Controller
                         'role'        => Role::USER->value,
                     ]);
                     $isNewUser = true;
+                }else {
+                    // Link provider if not already linked
+                    if (!$user->provider || !$user->provider_id) {
+                        $user->update([
+                            'provider'    => $provider,
+                            'provider_id' => $socialiteUser->getId(),
+                        ]);
+                    }
                 }
 
                 $token = auth('api')->login($user);
