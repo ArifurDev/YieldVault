@@ -19,7 +19,7 @@ class ActivityLogResource extends JsonResource
 //        return parent::toArray($request);
         $lang = $request->header('Accept-Language', 'en');
         // Set Carbon locale for human readable time
-        Carbon::setLocale($lang);
+        Carbon::setLocale(explode(',', $request->header('Accept-Language', 'en'))[0]);
         return [
             'id' => $this->id,
 
