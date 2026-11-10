@@ -1,61 +1,143 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<div align="center">
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# YieldVault
 
-## About Laravel
+### FinTech Investment & Wallet Management API
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+A Laravel backend for wallet operations, investment workflows, referral commissions, and secure account verification.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+**Wallet Ledger** · **Investment & ROI** · **Referral Network** · **Email 2FA** · **KYC**
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?style=flat-square&logo=php&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=flat-square&logo=laravel&logoColor=white)
+![MySQL](https://img.shields.io/badge/Database-MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white)
+![JWT](https://img.shields.io/badge/Auth-JWT%20%7C%20Sanctum-111827?style=flat-square)
+![Redis](https://img.shields.io/badge/Queue%20%26%20Cache-Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
 
-## Learning Laravel
+</div>
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Project Overview
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**YieldVault** is a REST API backend built with **Laravel 11** and **PHP 8.2+**. It supports core workflows for a financial and investment platform, including wallet and transaction management, investment tracking, ROI-related processing, multi-level referrals, KYC review, and account security.
 
-## Laravel Sponsors
+## Core Features
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+| Area | What it does |
+|---|---|
+| **Wallet & Transactions** | Manages wallet records, transaction history, deposits, and withdrawal requests |
+| **Investment Management** | Handles investment packages, user investments, and investment logs |
+| **ROI Processing** | Includes scheduled/background processing workflows for ROI-related operations |
+| **Referral Network** | Supports referral links, levels, referral settings, and commission-related logic |
+| **Authentication & 2FA** | JWT login flow with an additional email OTP verification step |
+| **KYC** | Supports document submission and manager review workflows |
+| **Daily Engagement** | Daily tasks, completion history, and streak-related activity |
+| **Admin / Manager APIs** | Provides manager endpoints for dashboards, wallet accounts, and deposit/withdrawal reviews |
+| **Notifications** | Firebase Cloud Messaging token management and notification endpoints |
+| **Access Control** | Role and permission management using Spatie Laravel Permission |
 
-### Premium Partners
+## Security Highlight: Two-Factor Authentication
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+YieldVault includes an email-based **Two-Factor Authentication (2FA)** flow:
 
-## Contributing
+- Generates a six-character alphanumeric verification code.
+- Stores a hash of the OTP rather than the plain-text code.
+- Sets a **5-minute** OTP expiration.
+- Invalidates previous unused codes when a new code is generated.
+- Uses a temporary JWT while login verification is pending.
+- Issues the regular authentication token after successful OTP verification.
+- Tracks failed 2FA verification attempts.
+- Provides endpoints to check, enable, verify, and disable 2FA.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Technology Stack
 
-## Code of Conduct
+| Technology | Purpose |
+|---|---|
+| **PHP 8.2+ / Laravel 11** | Backend application and REST API |
+| **MySQL** | Relational data storage |
+| **JWT Auth** | API authentication and temporary 2FA login token |
+| **Laravel Sanctum** | Token / session authentication support |
+| **Redis / Laravel Queues** | Queue and cache infrastructure |
+| **Spatie Laravel Permission** | Role-based access control |
+| **Firebase (Kreait)** | Firebase integration and push notification support |
+| **Laravel Socialite** | Social authentication integration |
+| **AWS S3 Flysystem** | S3-compatible file storage integration |
+| **Pest / PHPUnit** | Automated test suite |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Backend Engineering
 
-## Security Vulnerabilities
+- **Domain-focused modules:** separate controllers, models, services, requests, and API routes for major application areas.
+- **Financial record keeping:** dedicated wallet, wallet transaction, investment, and investment log data models.
+- **Asynchronous operations:** Laravel queue infrastructure for background work.
+- **Authorization:** role and permission-based access management.
+- **Request validation:** dedicated Form Request classes for API input validation.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Run Locally
+
+### Requirements
+
+- PHP 8.2+
+- Composer
+- MySQL
+- Redis (where required by your local queue/cache configuration)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/your-username/yieldvault-backend.git
+cd yieldvault-backend
+
+# Install PHP dependencies
+composer install
+
+# Create environment configuration
+cp .env.example .env
+php artisan key:generate
+```
+
+Configure your database and other required services in `.env`, then run:
+
+```bash
+php artisan migrate --seed
+php artisan serve
+```
+
+The local application will be available at `http://127.0.0.1:8000`.
+
+## Run Tests
+
+```bash
+php artisan test
+```
+
+The repository includes Pest/PHPUnit test configuration for unit and feature tests.
+
+## API Areas
+
+The versioned API routes are organized around these functional areas:
+
+- Authentication and profile
+- Two-factor authentication
+- Wallets and transactions
+- Investments and packages
+- Referrals and levels
+- KYC submission and review
+- Daily tasks
+- Notifications
+- Manager dashboard and financial request reviews
+
+See `routes/api.php` for the available endpoints and middleware.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+See the [`LICENSE`](LICENSE) file for license details.
+
+---
+
+<div align="center">
+
+**YieldVault** · Laravel FinTech Backend
+
+</div>
